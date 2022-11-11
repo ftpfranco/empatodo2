@@ -387,7 +387,17 @@ class EmpleadoController extends Controller
     public function destroy($id)
     {
         //
-
+  
+        $validator1 = \Validator::make(["id"=>$id],[
+            'id' => 'required|numeric'
+        ],[
+            'id.required' => "El EmpleadoId es obligatorio",
+            "id.numeric" => "El EmpleadoId no es correcto"
+        ]);
+        if ($validator1->fails()) {
+            // return redirect()->route("empleados.index");
+            return response()->json(["status" => "error", "message" => $validator1->errors()->all()],200);
+        }  
         $s = User::where('id', $id)->where("eliminado", false)->update([
             "eliminado" => true,
             'habilitado' =>false
