@@ -92,7 +92,16 @@ class ArticuloController extends Controller
     public function editar(Request $request, $id){
         
         
-
+        $validator1 = \Validator::make(["id"=>$id],[
+            'id' => 'required|numeric'
+        ],[
+            'id.required' => "El ArticuloId es obligatorio",
+            "id.numeric" => "El ArticuloId no es correcto"
+        ]);
+        if ($validator1->fails()) {
+            return redirect()->route("articulos.index");
+            // return response()->json(["status" => "error", "message" => $validator1->errors()->all()],200);
+        }  
         $articulo = Articulo::select('id', 'articulo', "nombre_corto",'codigo', 'precio_compra', 'precio_venta',  'stock', 'stock_minimo', 'marca_id', 'categoria_id'  )
         ->where("id",$id)
         ->where('eliminado', false)
@@ -115,7 +124,15 @@ class ArticuloController extends Controller
         // /'id','articulo','codigo','codigo_barras','stock','stock_minimo','marca_id',
         // 'categoria_id','subcategoria_id','precio_id','creator_id',
         // 'eliminado','created_at','updated_at'
-
+        $validator1 = \Validator::make(["id"=>$id],[
+            'id' => 'required|numeric'
+        ],[
+            'id.required' => "El ArticuloId es obligatorio",
+            "id.numeric" => "El ArticuloId no es correcto"
+        ]);
+        if ($validator1->fails()) {
+            return response()->json(["status" => "error", "message" => $validator1->errors()->all()],200);
+        }  
         $validator = \Validator::make($request->all(), [
             'nombre' => 'required|string|max:500',
             'nombre_corto' => 'nullable|string|max:500',
