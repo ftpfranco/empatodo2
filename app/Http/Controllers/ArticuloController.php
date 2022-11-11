@@ -516,7 +516,18 @@ class ArticuloController extends Controller
      */
     public function destroy($id)
     {
-        //
+         
+        $validator1 = \Validator::make(["id"=>$id],[
+            'id' => 'required|numeric'
+        ],[
+            'id.required' => "El ArticuloId es obligatorio",
+            "id.numeric" => "El ArticuloId no es correcto"
+        ]);
+        if ($validator1->fails()) {
+            // return redirect()->route("articulos.index");
+            return response()->json(["status" => "error", "message" => $validator1->errors()->all()],200);
+        }  
+
         // $creator_id = auth()->user()->creator_id;
         $s = Articulo::where('id', $id)->where("eliminado", false)->update([
             "eliminado" => true
