@@ -1,0 +1,22 @@
+{
+    "/js/app.js": "/js/app.js",
+    "/css/app.css": "/css/app.css",
+    "/js/articulos.edit.min.js": "/js/articulos.edit.min.js",
+    "/js/articulos.listado.min.js": "/js/articulos.listado.min.js",
+    "/js/categorias.min.js": "/js/categorias.min.js",
+    "/js/clientes.min.js": "/js/clientes.min.js",
+    "/js/compras.min.js": "/js/compras.min.js",
+    "/js/compras.nuevo.min.js": "/js/compras.nuevo.min.js",
+    "/js/empleados.min.js": "/js/empleados.min.js",
+    "/js/gastos.min.js": "/js/gastos.min.js",
+    "/js/gastostipos.min.js": "/js/gastostipos.min.js",
+    "/js/ingresos.min.js": "/js/ingresos.min.js",
+    "/js/ingresostipos.min.js": "/js/ingresostipos.min.js",
+    "/js/mostrador.min.js": "/js/mostrador.min.js",
+    "/js/notificacion.min.js": "/js/notificacion.min.js",
+    "/js/proveedores.min.js": "/js/proveedores.min.js",
+    "/js/ventas.edit.min.js": "/js/ventas.edit.min.js",
+    "/js/ventas.index.min.js": "/js/ventas.index.min.js",
+    "/js/ventas.listado.min.js": "/js/ventas.listado.min.js",
+    "/js/ventas.nuevo.min.js": "/js/ventas.nuevo.min.js"
+}

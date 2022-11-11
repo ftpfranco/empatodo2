@@ -1,0 +1,59 @@
+@media screen and (max-width: 480px) {
+    table tr {
+        margin-bottom: 20px;
+        display: block;
+    }
+    table td {
+        display: block;
+        text-align: right;
+        font-size: 16px;
+        margin-bottom: 10px;
+    }
+    table td:first-child {
+        background-color: rgb(6 61 100 / 88%);
+        color: white;
+    }
+    table td:first-child .listado-articulo {
+        font-weight: 600;
+    }
+    table td::before {
+        content: attr(data-label);
+        float: left;
+        font-weight: 600;
+        padding-bottom: 20px;
+        /* background-color: rgb(69, 67, 77); */
+    }
+    table thead {
+        display: none;
+    }
+    tbody input[type="number"] {
+        width: 150px;
+    }
+    tbody .td-disable {
+        display: none;
+    }
+    /* table>.foo>tr>td>span {
+        float: left;
+    } */
+    tbody .text-articulo {
+        text-align: center !important;
+    }
+    tbody td button,
+    tbody td a,
+    tbody td label {
+        display: block;
+        width: 100%;
+    }
+    .listado tr td:last-child {
+        display: flex;
+        width: 100%;
+        text-align: center!important;
+    }
+    table tr td:last-child button,
+    table tr td:last-child a,
+    table tr td:last-child label {
+        width: 100%;
+        margin-right: 0.25rem!important;
+        margin-left: 0.25rem!important;
+    }
+}
