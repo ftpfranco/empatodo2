@@ -3,6 +3,7 @@
     "/css/app.css": "/css/app.css",
     "/js/articulos.edit.min.js": "/js/articulos.edit.min.js",
     "/js/articulos.listado.min.js": "/js/articulos.listado.min.js",
+    "/js/cajas.min.js": "/js/cajas.min.js",
     "/js/categorias.min.js": "/js/categorias.min.js",
     "/js/clientes.min.js": "/js/clientes.min.js",
     "/js/compras.min.js": "/js/compras.min.js",

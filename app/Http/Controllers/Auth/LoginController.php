@@ -123,19 +123,29 @@ class LoginController extends Controller
             $time2_start = $turno["time2_start"] ? $turno["time2_start"] : null;
             $time2_end = $turno["time2_end"] ? $turno["time2_end"]: null;
 
-            $msj = "Estas fuera de tu horario laboral";            
-            if( $time1_start !==null && $time1_end !==null && date("H:i")>= $time1_start  && date("H:i")<= $time1_end   ){
-                // return redirect('/ventas-diarias');
-                $bandera = true;
-            }
+            $msj = "Estas fuera de tu horario laboral"; 
+            $hora_actual = date("H:i");    
 
-            if($time2_start!==null && $time2_end !==null && date("H:i") >= $time2_start && date("H:i")<= $time2_end ){
-                // return redirect('/ventas-diarias');
-                $bandera = true;
-            }
-            
+            if( ($time1_start !==null && $time1_end !==null) || ($time2_start !==null && $time2_end !==null) ){
+                if(   $hora_actual >= $time1_start  && $hora_actual <= $time1_end   ){
+                    // return redirect('/ventas-diarias');
+                    $bandera = true;
+                }
+    
+                if( $hora_actual  >= $time2_start && $hora_actual <= $time2_end ){
+                    // return redirect('/ventas-diarias');
+                    $bandera = true;
+                }
 
-            if($bandera == false){
+                if( $time2_start > $time2_end )  { 
+                    if( ($hora_actual >= $time2_start  && $hora_actual >= $time2_end) || $hora_actual <= $time2_end  ){
+                        $bandera = true;
+                    }
+                }
+            } 
+
+
+            if($bandera == false   ){
                 $this->guard()->logout();
                 $request->session()->invalidate();
 

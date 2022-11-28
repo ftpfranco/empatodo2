@@ -15,7 +15,7 @@
 <a class="btn" href="{{url('articulos')}}">  <i class="bi bi-arrow-left"></i> Volver atras</a>
 <div class="page-heading mx-3 mb-1">
         <div class="mb-3 mt-0">
-            <button class="btn btn-outline-success mx-2 " data-bs-toggle="modal"
+            <button class="btn btn-sm  btn-outline-success mx-2 " data-bs-toggle="modal"
                 data-bs-target="#nueva-categoria"> <strong>+</strong>NUEVO</button>
         </div>
         <div class=" d-flex justify-content-start ">

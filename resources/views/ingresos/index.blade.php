@@ -26,9 +26,9 @@
 
     <div class="page-heading mx-3 mb-1">
         <div class="mb-3 mt-0">
-            <button class="btn btn-outline-success mx-1 mt-1 " data-bs-toggle="modal" data-bs-target="#ingreso-nuevo"> <strong>+</strong>NUEVO 
+            <button class="btn btn-sm btn-outline-success mx-1 mt-1 " data-bs-toggle="modal" data-bs-target="#ingreso-nuevo"> <strong>+</strong>NUEVO 
             </button> 
-            <a class="btn btn-outline-success mx-1 mt-1" href="{{url('ingresostipos')}}" >CATEGORIA DE INGRESOS</a>
+            <a class="btn btn-sm btn-outline-success  mx-1 mt-1" href="{{url('ingresostipos')}}" >CATEGORIA DE INGRESOS</a>
         </div>
         <div class="d-flex justify-content-start">
             <h3> Ingresos </h3>

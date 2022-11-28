@@ -16,6 +16,7 @@ mix.js('resources/js/app.js', 'public/js')
 
 .js('public/js/resources/articulos.edit_.js', 'public/js/articulos.edit.min.js')
     .js('public/js/resources/articulos.listado_.js', 'public/js/articulos.listado.min.js')
+    .js('public/js/resources/cajas_.js', 'public/js/cajas.min.js')
     .js('public/js/resources/categorias_.js', 'public/js/categorias.min.js')
     .js('public/js/resources/clientes_.js', 'public/js/clientes.min.js')
     .js('public/js/resources/compras_.js', 'public/js/compras.min.js')

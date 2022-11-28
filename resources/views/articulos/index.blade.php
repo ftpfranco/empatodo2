@@ -18,8 +18,8 @@
     <div class="page-heading mx-3 mb-1 ">
         @role("administrador")
         <div class="mb-3 mt-0">
-            <button class="btn btn-outline-success mt-1" data-bs-toggle="modal" data-bs-target="#nuevo-articulo"><strong>+</strong>NUEVO</button>
-            <a class="btn btn-outline-success mt-1" href="{{url("categorias")}}" > CATEGORIA DE ARTICULOS</a>
+            <button class="btn btn-sm  btn-outline-success mt-1" data-bs-toggle="modal" data-bs-target="#nuevo-articulo"><strong>+</strong>NUEVO</button>
+            <a class="btn btn-sm  btn-outline-success mt-1" href="{{url("categorias")}}" > CATEGORIA DE ARTICULOS</a>
         </div>
         @endrole
         <div class=" d-flex justify-content-start">

@@ -29,17 +29,17 @@ Route::post("logout", "Auth\LoginController@logout")->name("logout");
 
 Route::group(['middleware' => ['auth']], function () {
 
-    // cajas
+    // CAJAS
     Route::get("cajas", "CajasController@index")->middleware(["permission:caja-index"]); //->middleware(['role:premium1','permission:caja-cajas']);
-    Route::get("cajas/filtro", "CajasController@filtro")->middleware(["permission:caja-filtro"]); //->middleware(['role:premium1','permission:caja-cajas']);
+    // Route::get("cajas/filtro", "CajasController@filtro")->middleware(["permission:caja-filtro"]); //->middleware(['role:premium1','permission:caja-cajas']);
     Route::post("cajas", "CajasController@store")->middleware(["permission:caja-store"]);  //->middleware(['role:premium1', 'permission:store-cajas']);
     Route::post("cajas/abrir", "CajasController@abrir")->middleware(["permission:caja-abrir"]); //->middleware(['role:premium1','permission:store-cajas']);
     Route::post("cajas/cerrar", "CajasController@cerrar")->middleware(["permission:caja-cerrar"]);  //->middleware(['role:premium1','permission:store-cajas']);
-    Route::post("cajas/ingreso", "CajasController@ingreso")->middleware(["permission:caja-ingreso"]); //->middleware(['role:premium1','permission:store-cajas']);
-    Route::post("cajas/egreso", "CajasController@egreso")->middleware(["permission:caja-egreso"]);; //->middleware(['role:premium1','permission:store-cajas']);
+    // Route::post("cajas/ingreso", "CajasController@ingreso")->middleware(["permission:caja-ingreso"]); //->middleware(['role:premium1','permission:store-cajas']);
+    // Route::post("cajas/egreso", "CajasController@egreso")->middleware(["permission:caja-egreso"]);; //->middleware(['role:premium1','permission:store-cajas']);
     Route::put("cajas/update/{caja}", "CajasController@update")->middleware(["permission:caja-update"]);  //->middleware(['role:premium1', 'permission:update-cajas']);
-    Route::get("cajas/show/{caja}", "CajasController@show")->middleware(["permission:caja-show"]);  //->middleware(['role:premium1', 'permission:show-cajas']);
-    Route::delete("cajas/delete/{caja}", "CajasController@destroy")->middleware(["permission:caja-destroy"]);  //->middleware(['role:premium1', 'permission:delete-cajas']);
+    // Route::get("cajas/show/{caja}", "CajasController@show")->middleware(["permission:caja-show"]);  //->middleware(['role:premium1', 'permission:show-cajas']);
+    // Route::delete("cajas/delete/{caja}", "CajasController@destroy")->middleware(["permission:caja-destroy"]);  //->middleware(['role:premium1', 'permission:delete-cajas']);
 
 
 

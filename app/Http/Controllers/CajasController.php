@@ -27,22 +27,33 @@ class CajasController extends Controller
     public function index()
     {
         //
-        $user_id = auth()->user()->creator_id;
+        $user_id = auth()->user()->id;
 
         // campo estado, justo, con faltante
         $caja_abierta = CajasDetalle::select('id', 'inicio_fecha', 'inicio_hora', 'monto_inicio', 'monto_estimado', 'ingresos', 'egresos')->where('caja_abierta', true)->get();
 
+       
+
+        if( auth()->user()->es_empleado == true ){
+            $historial = CajasDetalle::select('id',  'user_id', 'inicio_fecha', 'inicio_hora', 'cierre_fecha', 'cierre_hora', 'monto_inicio', 'monto_estimado', 'monto_real', 'diferencia', 'ingresos',  'egresos')
+                ->where("caja_abierta", false)
+                ->where("user_id",$user_id)
+                ->orderby("id", "desc")
+                //->paginate(15);
+                ->take(5)->get();
+            return view('cajas.index', compact('caja_abierta', 'historial'));
+
+        }
+
         $historial = CajasDetalle::select('id',  'user_id', 'inicio_fecha', 'inicio_hora', 'cierre_fecha', 'cierre_hora', 'monto_inicio', 'monto_estimado', 'monto_real', 'diferencia', 'ingresos',  'egresos')
             ->where("caja_abierta", false)
-            ->orderby("inicio_fecha", "desc")
-            ->paginate(15);
-
-
+            ->orderby("id", "desc")
+            //->paginate(15);
+            ->take(10)->get();
 
         return view('cajas.index', compact('caja_abierta', 'historial'));
         // return response()->json(["status"=>"success","cajas"=>$cajas]);
     }
-
 
     public function filtro(Request $request)
     {
@@ -81,10 +92,9 @@ class CajasController extends Controller
         return response()->json(view("cajas.index_data", compact("historial"))->render());
     }
 
-
     public function abrir(Request $request)
     {
-        $user_id = auth()->user()->creator_id;
+        $user_id = auth()->user()->id;
         // $request->validate([
         //     'monto' => 'required|numeric|between:0.00,999999.99',
         //     'fecha' => 'date',
@@ -93,8 +103,14 @@ class CajasController extends Controller
 
         $validator = \Validator::make($request->all(), [
             'monto' => 'required|numeric|between:0.00,999999.99',
-            'fecha' => 'date',
-            'hora' => 'date_format:H:i',
+            'fecha' => 'nullable|date',
+            'hora' => 'nullable|date_format:H:i',
+        ],[
+            'monto_real.numeric'=> "El monto ingresado no es valido",
+            "monto_real.between" => "El monto ingresado no es valido",
+            "fecha.date" => "La fecha ingresada no es valido",
+            "hora.date_format" => "La hora ingresada  no es valido",
+            // "comentario.max" => "El comentario ingresado no es valido"
         ]);
 
         if ($validator->fails()) {
@@ -116,12 +132,18 @@ class CajasController extends Controller
         $data["inicio_fecha"] = $fecha;
         $data["inicio_hora"] = $hora;
         $data["monto_inicio"] = $monto;
-        $data["monto_estimado"] = $monto;
-        $data["ingresos"] = 0;
-        $data["egresos"] = 0;
+        // $data["monto_estimado"] = $monto;
+        // $data["ingresos"] = 0;
+        // $data["egresos"] = 0;
         $data["caja_abierta"] = true;
 
-        $caja = CajasDetalle::create($data);
+        try {
+            $caja = CajasDetalle::create($data);
+        } catch (\Exception $th) {
+            //throw $th;
+            return response()->json(["status" => "success",   "message" => "Caja abierta!","data" =>$th]);
+
+        }
         unset($data["user_id"]);
         unset($data["caja_abierta"]);
         
@@ -132,12 +154,19 @@ class CajasController extends Controller
 
     public function cerrar(Request $request)
     {
-        $user_id = auth()->user()->creator_id;
+        $user_id = auth()->user()->id;
 
         $validator = \Validator::make($request->all(), [
             'monto_real' => 'required|numeric|between:0.00,999999.99',
-            'fecha' => 'date',
-            'hora' => 'date_format:H:i',
+            'fecha' => 'nullable|date',
+            'hora' => 'nullable|date_format:H:i',
+            // 'comentario' => 'nullable|string|max:500'
+        ],[
+            'monto_real.numeric'=> "El monto ingresado no es valido",
+            "monto_real.between" => "El monto ingresado no es valido",
+            "fecha.date" => "La fecha ingresada no es valido",
+            "hora.date_format" => "La hora ingresada  no es valido",
+            // "comentario.max" => "El comentario ingresado no es valido"
         ]);
 
         if ($validator->fails()) {
@@ -146,6 +175,7 @@ class CajasController extends Controller
         $monto_real = request()->monto_real;
         $fecha = request()->fecha;
         $hora = request()->hora ? request()->hora : date("H:i");
+        // $comentario = isset(request()->comentario) && !empty(request()->comentario) ? trim(request()->comentario) : null;
 
         $abiertas = CajasDetalle::select('id', \DB::raw('monto_inicio+ingresos-egresos as total'),'inicio_fecha', 'inicio_hora', 'monto_inicio', 'monto_estimado', 'ingresos', 'egresos')->where("caja_abierta", true)->first();
         if (!$abiertas) {
@@ -159,7 +189,7 @@ class CajasController extends Controller
         //     $estado = "Faltante";
         //     $diferencia = explode("-", $diferencia)[1];
         // }
-        $array = ["caja_abierta"=>false,"cierre_fecha" => $fecha, "cierre_hora" => $hora, "monto_real" => $monto_real, "diferencia" => $diferencia];
+        $array = ["user_id"=>$user_id,"caja_abierta"=>false,"cierre_fecha" => $fecha, "cierre_hora" => $hora, "monto_real" => $monto_real, "diferencia" => $diferencia];
         CajasDetalle::where("caja_abierta", true)->update($array);
         $array["inicio_fecha"] = $abiertas->inicio_fecha;
         $array["inicio_hora"] = $abiertas->inicio_hora;
@@ -168,6 +198,7 @@ class CajasController extends Controller
         $array["ingresos"] = $abiertas->ingresos;
         $array["egresos"] = $abiertas->egresos;
         unset($array["caja_abierta"]);
+        unset($array["user_id"]);
 
 
         return response()->json(["status" => "success", "message" => "Caja cerrada!","data"=>$array]);
@@ -175,80 +206,80 @@ class CajasController extends Controller
 
 
 
-    public function ingreso(Request $request)
-    {
-        $user_id = auth()->user()->creator_id;
+    // public function ingreso(Request $request)
+    // {
+    //     $user_id = auth()->user()->creator_id;
 
-        $validator = \Validator::make($request->all(), [
-            'importe' => 'required|numeric|between:0.00,999999.99',
-            'comentario' => 'nullable|string|min:0|max:2000'
-        ]);
+    //     $validator = \Validator::make($request->all(), [
+    //         'importe' => 'required|numeric|between:0.00,999999.99',
+    //         'comentario' => 'nullable|string|min:0|max:2000'
+    //     ]);
 
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()->all()]);
-        }
+    //     if ($validator->fails()) {
+    //         return response()->json(['errors' => $validator->errors()->all()]);
+    //     }
 
-        $caja_abierta = CajasDetalle::select('id')->where('caja_id', 1)->where('caja_abierta',true)->get();
-        if (count($caja_abierta) == 0) {
-            return response()->json(["status" => "success", "message" => "No abrio caja!"]);
-        }
+    //     $caja_abierta = CajasDetalle::select('id')->where('caja_id', 1)->where('caja_abierta',true)->get();
+    //     if (count($caja_abierta) == 0) {
+    //         return response()->json(["status" => "success", "message" => "No abrio caja!"]);
+    //     }
 
-        $array = array();
-        $id = $caja_abierta[0]->id;
-        $array["cajadetalle_id"] = $id;
-        $array["user_id"] = 1;
-        $array["es_ingreso"] = true;
-        if (request()->importe)  $array["monto"] = request()->importe;
-        if (request()->comentario) $array["comentario"] = request()->comentario;
+    //     $array = array();
+    //     $id = $caja_abierta[0]->id;
+    //     $array["cajadetalle_id"] = $id;
+    //     $array["user_id"] = 1;
+    //     $array["es_ingreso"] = true;
+    //     if (request()->importe)  $array["monto"] = request()->importe;
+    //     if (request()->comentario) $array["comentario"] = request()->comentario;
 
-        CajasIngresoEgreso::create($array);
-        $ingresos = CajasIngresoEgreso::select(\DB::raw("sum(monto) as monto"))->where("cajadetalle_id", $id)->where("es_ingreso", true)->get();
-        CajasDetalle::where("caja_abierta", true)->update(["ingresos" => $ingresos[0]->monto]);
-        CajasDetalle::where("caja_abierta", true)->increment("monto_estimado" , $ingresos[0]->monto);
+    //     CajasIngresoEgreso::create($array);
+    //     $ingresos = CajasIngresoEgreso::select(\DB::raw("sum(monto) as monto"))->where("cajadetalle_id", $id)->where("es_ingreso", true)->get();
+    //     CajasDetalle::where("caja_abierta", true)->update(["ingresos" => $ingresos[0]->monto]);
+    //     CajasDetalle::where("caja_abierta", true)->increment("monto_estimado" , $ingresos[0]->monto);
 
-        $data = CajasDetalle::select('id', 'inicio_fecha', 'inicio_hora', 'monto_inicio', 'monto_estimado', 'ingresos', 'egresos')->where('caja_abierta', true)->first();
-        return response()->json(["status" => "success", "message" => "Ingreso registrado!","data"=>$data]);
-    }
-
-
+    //     $data = CajasDetalle::select('id', 'inicio_fecha', 'inicio_hora', 'monto_inicio', 'monto_estimado', 'ingresos', 'egresos')->where('caja_abierta', true)->first();
+    //     return response()->json(["status" => "success", "message" => "Ingreso registrado!","data"=>$data]);
+    // }
 
 
 
-    public function egreso(Request $request)
-    {
-        $user_id = auth()->user()->creator_id;
 
-        $validator = \Validator::make($request->all(), [
-            'importe' => 'required|numeric|between:0.00,999999.99',
-            'comentario' => 'nullable|string|min:0|max:2000'
-        ]);
 
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()->all()]);
-        }
+    // public function egreso(Request $request)
+    // {
+    //     $user_id = auth()->user()->creator_id;
 
-        $caja_abierta = CajasDetalle::select('id')->where('caja_id', 1)->where('caja_abierta',true)->get();
-        if (count($caja_abierta) == 0) {
-            return response()->json(["status" => "success", "message" => "No exiten cajas abiertas!"]);
-        }
+    //     $validator = \Validator::make($request->all(), [
+    //         'importe' => 'required|numeric|between:0.00,999999.99',
+    //         'comentario' => 'nullable|string|min:0|max:2000'
+    //     ]);
 
-        $array = array();
-        $id = $caja_abierta[0]->id;
-        $array["cajadetalle_id"] = $id;
-        $array["user_id"] = 1;
-        $array["es_ingreso"] = false;
-        if (request()->importe)  $array["monto"] = request()->importe;
-        if (request()->comentario) $array["comentario"] = request()->comentario;
+    //     if ($validator->fails()) {
+    //         return response()->json(['errors' => $validator->errors()->all()]);
+    //     }
 
-        CajasIngresoEgreso::create($array);
-        $egresos = CajasIngresoEgreso::select(\DB::raw("sum(monto) as monto"))->where("cajadetalle_id", $id)->where("es_ingreso", false)->get();
-        CajasDetalle::where("caja_abierta",true)->update(["egresos" => $egresos[0]->monto]);
-        CajasDetalle::where("caja_abierta",true)->decrement("monto_estimado" ,$egresos[0]->monto);
+    //     $caja_abierta = CajasDetalle::select('id')->where('caja_id', 1)->where('caja_abierta',true)->get();
+    //     if (count($caja_abierta) == 0) {
+    //         return response()->json(["status" => "success", "message" => "No exiten cajas abiertas!"]);
+    //     }
 
-        $data = CajasDetalle::select('id', 'inicio_fecha', 'inicio_hora', 'monto_inicio', 'monto_estimado', 'ingresos', 'egresos')->where('caja_abierta', true)->first();
+    //     $array = array();
+    //     $id = $caja_abierta[0]->id;
+    //     $array["cajadetalle_id"] = $id;
+    //     $array["user_id"] = 1;
+    //     $array["es_ingreso"] = false;
+    //     if (request()->importe)  $array["monto"] = request()->importe;
+    //     if (request()->comentario) $array["comentario"] = request()->comentario;
 
-        return response()->json(["status" => "success", "message" => "Egreso registrado!","data"=>$data]);
-    }
+    //     CajasIngresoEgreso::create($array);
+    //     $egresos = CajasIngresoEgreso::select(\DB::raw("sum(monto) as monto"))->where("cajadetalle_id", $id)->where("es_ingreso", false)->get();
+    //     CajasDetalle::where("caja_abierta",true)->update(["egresos" => $egresos[0]->monto]);
+    //     CajasDetalle::where("caja_abierta",true)->decrement("monto_estimado" ,$egresos[0]->monto);
+
+    //     $data = CajasDetalle::select('id', 'inicio_fecha', 'inicio_hora', 'monto_inicio', 'monto_estimado', 'ingresos', 'egresos')->where('caja_abierta', true)->first();
+
+    //     return response()->json(["status" => "success", "message" => "Egreso registrado!","data"=>$data]);
+    // }
 
     /**
      * Store a newly created resource in storage.
@@ -259,7 +290,7 @@ class CajasController extends Controller
     public function store(Request $request)
     {
         //
-        $user_id = auth()->user()->creator_id;
+        $user_id = auth()->user()->id;
         $caja = $request->validate([
             'caja' => 'required|string|max:50',
         ]);

@@ -24,9 +24,9 @@
 
     <div class="page-heading mx-3 mb-1">
         <div class="mb-3 mt-0">
-            <button class="btn btn-outline-success mt-1   mx-1" data-bs-toggle="modal" data-bs-target="#gasto-nuevo"> <strong>+</strong>NUEVO
+            <button class="btn btn-sm  btn-outline-success mt-1   mx-1" data-bs-toggle="modal" data-bs-target="#gasto-nuevo"> <strong>+</strong>NUEVO
             </button> 
-            <a class="btn btn-outline-success mt-1  mx-1" href="{{url('egresostipos')}}"  > CATEGORIA DE EGRESOS </a>
+            <a class="btn btn-sm  btn-outline-success mt-1  mx-1" href="{{url('egresostipos')}}"  > CATEGORIA DE EGRESOS </a>
         </div>
         <div class="d-flex justify-content-start">
             <h3> Egresos </h3>

@@ -16,7 +16,7 @@
 <a class="btn" href="{{url('egresos')}}">  <i class="bi bi-arrow-left"></i> Volver atras</a>
     <div class="page-heading mx-3 mb-1">
         <div class="mb-3 mt-0">
-            <a class="btn btn-outline-success mx-2 " data-bs-toggle="modal"
+            <a class="btn btn-sm  btn-outline-success mx-2 " data-bs-toggle="modal"
             data-bs-target="#tipo-nuevo"><strong>+</strong>NUEVO</a>
         </div>
         <div class="d-flex justify-content-start">

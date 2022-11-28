@@ -17,7 +17,7 @@
     <div class="page-heading mx-3 mb-1">
 
         <div class="mb-3 mt-0">
-            <button class="btn btn-outline-success mx-2 " data-bs-toggle="modal"
+            <button class="btn btn-sm  btn-outline-success mx-2 " data-bs-toggle="modal"
                 data-bs-target="#tipo-nuevo"><strong>+</strong>NUEVO</button>
         </div>
         <div class="d-flex justify-content-start">

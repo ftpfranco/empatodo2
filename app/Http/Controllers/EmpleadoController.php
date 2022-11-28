@@ -16,19 +16,7 @@ class EmpleadoController extends Controller
      */
     public function index()
     {
-        //
-        // 'id','nombre',"nombre_fantasia", 'email', 'password',"tipo_identificacion_id","nro_dni","telefono","localidad","calle","nro_calle","piso","es_empleado"
-
-        // $tipoidentificacion = TipoIdentificacion::select("id", "tipo_identificacion")->where("eliminado", false)->pluck("tipo_identificacion", "id");
-        // $empleados = User::select('users.id', 'users.nombre', 'users.email', "users.nro_dni", "users.telefono", "users.localidad","users.habilitado","users.horarios","turnos.time1_start","turnos.time1_end","turnos.time2_start","turnos.time2_end")
-        // ->leftjoin("turnos","turnos.user_id","=","users.id")
-        // ->where([
-        //     ["users.es_empleado", true],
-        //     ["users.eliminado", false,]
-        // ])
-        // ->orwhere("turnos.eliminado",false)
-        // ->orderby("users.id","desc")->paginate(15);
-
+        
         $empleados = User::select('id', 'nombre', 'email', "nro_dni", "telefono","direccion", "localidad","habilitado","horarios" )
         ->where( "es_empleado", true)
         ->where( "eliminado", false)
@@ -82,16 +70,16 @@ class EmpleadoController extends Controller
             'direccion' => 'nullable|string|max:200',
             'localidad' => 'nullable|string|max:200',
             'time1_start' => 'nullable|date_format:H:i',
-            'time1_end' => 'nullable|date_format:H:i|after:time1_start',
+            'time1_end' => 'nullable|date_format:H:i',
             'time2_start' => 'nullable|date_format:H:i',
-            'time2_end' => 'nullable|date_format:H:i|after:time2_start',
+            'time2_end' => 'nullable|date_format:H:i',
             'habilitado' => 'nullable|string'
             // 'nota_adicional'=>"string|max:5000"
         ],[
             "nombre.required" => "Debes ingresar un numero de usuario",
             "email.unique" => "El mail ingresado ya fue utilizado!",
-            "time1_end.after" => "La hora de fin del Turno mañana no debe ser igual a la hora de inicio del Turno mañana",
-            "time2_end.after" => "La hora de fin del Turno tarde no debe ser igual a la hora de inicio del Turno tarde",
+            // "time1_end.after" => "La hora de fin del Turno mañana no debe ser igual a la hora de inicio del Turno mañana",
+            // "time2_end.after" => "La hora de fin del Turno tarde no debe ser igual a la hora de inicio del Turno tarde",
         ]);
 
         if ($validator->fails()) {
@@ -240,8 +228,8 @@ class EmpleadoController extends Controller
         ], [
             "nombre.required" => "Debes ingresar un nombre de usuario",
             "email.unique" => "El mail ingresado ya esta en uso",
-            "time1_end.after" => "La hora de fin del Turno mañana no debe ser igual a la hora de inicio del Turno mañana",
-            "time2_end.after" => "La hora de fin del Turno tarde no debe ser igual a la hora de inicio del Turno tarde",
+            // "time1_end.after" => "La hora de fin del Turno mañana no debe ser igual a la hora de inicio del Turno mañana",
+            // "time2_end.after" => "La hora de fin del Turno tarde no debe ser igual a la hora de inicio del Turno tarde",
         ]);
 
         if ($validator->fails()) {
