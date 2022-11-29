@@ -74,6 +74,10 @@
                         <li> 
                             <hr class="dropdown-divider">
                         </li>
+
+                        @role("administrador|vendedor")
+                        <li><a class="dropdown-item" href="{{url("cajas")}}">   Caja </a></li>  
+                        @endrole
                         @role("administrador")
                         <li><a class="dropdown-item" href="{{url("articulos")}}">   Articulos </a></li>  
                         {{-- <li><a class="dropdown-item" href="{{url("categorias")}}">   Categorias </a></li>  --}}

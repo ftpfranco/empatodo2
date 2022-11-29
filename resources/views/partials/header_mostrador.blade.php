@@ -4,9 +4,9 @@
                 </a> --> --}}
     <nav class="navbar navbar-expand navbar-light ">
         <div class="container-fluid">
-            {{-- <a href="#" class="burger-btn d-block">
+            <a href="#" class="burger-btn d-block">
                 <i class="bi bi-justify fs-3"></i>
-            </a> --}}
+            </a>
 
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
                 data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false"
@@ -63,25 +63,65 @@
                             </div>
                         </div>
                     </a>
-                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButton">
-                        <li>
+                    <ul class="dropdown-menu dropdown-menu-end shadow"  aria-labelledby="dropdownMenuButton">
+                        {{-- <li>
                             <h6 class="dropdown-header">Hola,
                                 {{ auth()->check() ? auth()->user()->nombre : 'Usuario' }}!</h6>
-                        </li>
-                        {{-- <li>
-                            <a class="dropdown-item" href="{{ url('notificaciones') }}">
-                                <i class="icon-mid bi bi-bell me-2"></i> 
-                                Notificaciones
-                            </a>
                         </li> --}}
-                         {{-- <li><a class="dropdown-item" href="#"><i class="icon-mid bi bi-gear me-2"></i>
-                                Settings</a></li>  
-                         <li><a class="dropdown-item" href="#"><i class="icon-mid bi bi-wallet me-2"></i>
-                                Wallet</a></li> 
+                        @hasanyrole("administrador|vendedor")
+                        <li><a class="dropdown-item" href="{{url("mostrador")}}"> Mostrador </a></li>  
+                        @endrole
                         <li> 
                             <hr class="dropdown-divider">
                         </li>
-                        --}}
+
+                        @role("administrador|vendedor")
+                        <li><a class="dropdown-item" href="{{url("cajas")}}">   Caja </a></li>  
+                        @endrole
+                        @role("administrador")
+                        <li><a class="dropdown-item" href="{{url("articulos")}}">   Articulos </a></li>  
+                        {{-- <li><a class="dropdown-item" href="{{url("categorias")}}">   Categorias </a></li>  --}}
+                        <li> 
+                            <hr class="dropdown-divider">
+                        </li>
+                        @endrole
+
+                        @hasanyrole("administrador|vendedor")
+                        <li><a class="dropdown-item" href="{{url("ventas-diarias")}}">   Ventas del dia</a></li>  
+                        <li><a class="dropdown-item" href="{{url("ventas/nuevo")}}">   Nueva venta </a></li> 
+                        @endrole
+
+                        @role("administrador")
+                        <li><a class="dropdown-item" href="{{url("listado")}}">   Listado de ventas </a></li> 
+                        {{-- <li><a class="dropdown-item" href="{{url("clientes")}}">  Clientes </a></li>  --}}
+                        <li> 
+                            <hr class="dropdown-divider">
+                        </li>
+                        @endrole
+                        @role("administrador")
+                        <li><a class="dropdown-item" href="{{url("egresos")}}"> Egresos </a></li>
+                        <li> 
+                            <hr class="dropdown-divider">
+                        </li>
+                        @endrole  
+                        @role("administrador")
+                        <li><a class="dropdown-item" href="{{url("ingresos")}}"> Ingresos </a></li> 
+                        @endrole
+                        <li> 
+                            <hr class="dropdown-divider">
+                        </li>
+                        @hasanyrole("administrador|vendedor")
+                        <li>
+                            <a class="dropdown-item" href="{{ url('notificaciones') }}">
+                                {{-- <i class="icon-mid bi bi-bell me-2"></i>  --}}
+                                Notificaciones
+                            </a>
+                        </li>
+                        <li> 
+                            <hr class="dropdown-divider">
+                        </li>
+                        @endrole
+
                         <li>
 
                             <a class="dropdown-item" href="{{ route('logout') }}" onclick="event.preventDefault();

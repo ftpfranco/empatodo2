@@ -34,6 +34,17 @@
                 </li>
                 @endrole
 
+                @role("administrador|vendedor")
+                <li class="sidebar-item   {{Request::path() == "cajas" ?'active':''}} ">
+                    <a href="{{ url('cajas') }}" class='sidebar-link'>
+                        <i class="bi bi-archive"></i>
+                        <span>Caja</span>
+                    </a>
+                </li>
+                @endrole
+
+
+                
                 {{-- @role("administrador") --}}
                 @hasanyrole("administrador|vendedor")
                 <li class="sidebar-item   {{(Request::path() == "articulos"||Request::path() == "categorias"||Request::path() == "marcas") ?'active':''}} ">
@@ -215,16 +226,7 @@
 
 
 
-                {{-- @role("administrador|vendedor")
-                <li class="sidebar-item   {{Request::path() == "cajas" ?'active':''}} ">
-                    <a href="{{ url('cajas') }}" class='sidebar-link'>
-                        <i class="bi bi-archive"></i>
-                        <span>Caja</span>
-                    </a>
-                     
-                </li>
-                @endrole --}}
-
+                
 
 
                 {{-- <li class="sidebar-item  has-sub" hidden>

@@ -375,6 +375,6 @@
 
     {{-- <script src="https://code.jquery.com/jquery-3.3.1.js"></script> --}}
     {{-- <script defer src="{{ asset('js/resources/cajas_.js')}}"></script> --}}
-    <script defer src="{{ asset('js/cajas_.min.js')}}"></script>
+    <script defer src="{{ asset('js/cajas.min.js')}}"></script>
 
 @endsection
