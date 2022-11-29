@@ -305,7 +305,7 @@ class EstadisticasController extends Controller
     }
 
     public function anio(){
-        $meses = array("Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Setiembre","Octubre","Novienbre","Diciembre");
+        $meses = array("Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Setiembre","Octubre","Noviembre","Diciembre");
         $anioIni = array();
         for ($i=1; $i <=12 ; $i++) {
             $tm = strtotime(date("Y-").$i);
