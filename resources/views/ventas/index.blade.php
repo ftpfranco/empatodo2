@@ -347,7 +347,7 @@
                                         </svg>
                                     </div>
                                     <div class="name text-muted text-decoration-none text-center pt-1">
-                                        No se registraron ventas
+                                        Aqui podras listar todas tus ventas realizadas en el dia de hoy 
                                     </div>
                                 </div>
                             </div>
