@@ -4,7 +4,7 @@ $(document).ready(function () {
         var thi = $(this)
         var fecha = $.trim($('#fecha').val())
         var hora = $('#hora').val()
-        var monto = $.trim($('#monto').val())  ? parseFloat($('#monto').val()).toFixed(2) : undefined
+        var monto = $.trim($('#monto').val())  ? parseFloat($('#monto').val()).toFixed(2) : 0
         var url = window.location.origin + '/cajas/abrir'
 
         var data = {

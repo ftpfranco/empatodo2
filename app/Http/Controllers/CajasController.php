@@ -109,13 +109,13 @@ class CajasController extends Controller
         // ]);
 
         $validator = \Validator::make($request->all(), [
-            'monto' => 'required|numeric|between:0.00,999999.99',
+            'monto' => 'required|numeric|max:999999.99',
             'fecha' => 'nullable|date',
             'hora' => 'nullable|date_format:H:i',
         ],[
             'monto.required'=> "El monto ingresado no es valido",
             'monto.numeric'=> "El monto ingresado no es valido",
-            "monto.between" => "El monto ingresado no es valido",
+            "monto.max" => "El monto ingresado no es valido",
             "fecha.date" => "La fecha ingresada no es valido",
             "hora.date_format" => "La hora ingresada  no es valido",
             // "comentario.max" => "El comentario ingresado no es valido"
