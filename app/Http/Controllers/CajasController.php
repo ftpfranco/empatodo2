@@ -55,6 +55,7 @@ class CajasController extends Controller
             // 'estado', 
             // 'eliminado','created_at','updated_at'
         $historial = CajasDetalleH::select('id','cajadetalle_id','inicio_fecha','cierre_fecha','inicio_hora','cierre_hora','monto_inicio','monto_estimado','monto_real','diferencia','estado'  )
+        ->where("eliminado",false)
         ->orderby("id","desc")->take(10)->get();
           
         return view('cajas.index', compact('caja_abierta', 'historial'));
