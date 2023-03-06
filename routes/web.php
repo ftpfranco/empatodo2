@@ -27,7 +27,7 @@ Route::post("login", "Auth\LoginController@login")->name("login");
 Route::post("logout", "Auth\LoginController@logout")->name("logout");
 
 
-Route::group(['middleware' => ['auth']], function () {
+Route::group(['middleware' => ['auth','XssSanitizer']], function () {
 
     // CAJAS
     Route::get("cajas", "CajasController@index")->middleware(["permission:caja-index"]); //->middleware(['role:premium1','permission:caja-cajas']);
@@ -241,6 +241,8 @@ Route::group(['middleware' => ['auth']], function () {
 
 
     Route::get('estadisticas', 'EstadisticasController@index')->name("estadisticas.index")->middleware(['permission:ver-estadisticas']);
+    Route::get('estadisticas/ganancias_por_tipopago', 'EstadisticasGananciasController@index')->name("estadisticas.ganancias_por_tipopago") ->middleware(['permission:ver-estadisticas-articulos']) ; // ->middleware(['permission:ver-ganancias-por-tipopago']);
+    Route::get('estadisticas/porcentaje_ventas', 'EstadisticasPorcentajeController@index')->name("estadisticas.porcentaje_ventas") ->middleware(['permission:ver-estadisticas-articulos']) ; // ->middleware(['permission:ver-ganancias-por-tipopago']);
     
     Route::get('estadisticas/articulos_vendidos_por_dia', 'EstadisticasController@articulos')->name("estadisticas.articulos")->middleware(['permission:ver-estadisticas-articulos']);
 

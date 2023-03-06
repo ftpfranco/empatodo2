@@ -34,7 +34,7 @@ $(document).ready(function() {
 
         if (gastotipo == undefined) { msjAlert("Selecciona una Categoria", true); return false }
         if (monto == undefined) { msjAlert("Ingresa un monto", true); return false }
-
+        if (comentario.length > 1000) { msjAlert("El Comentario ingresado no debe superar los 1000 caracteres") ; return false }
         var span =
             ' <div class="spinner-border" role="status" style="width:1rem !important;height:1rem !important"> <span class="visually-hidden">Loading...</span>  </div>';
         $(thi).html(span)
@@ -122,7 +122,8 @@ $(document).ready(function() {
 
                 },
                 error: function(response) {
-                    msjAlert(JSON.parse(response.responseText).message, true)
+                    msjAlert("Se produjo un error",true)
+                    // msjAlert(JSON.parse(response.responseText).message, true)
 
                 }
             }); // ajax
@@ -183,6 +184,7 @@ $(document).ready(function() {
             msjAlert("Ingresa un monto", true)
             return false;
         }
+        if (comentario.length > 1000) { msjAlert("El Comentario ingresado no debe superar los 1000 caracteres") ; return false }
 
         var span =
             ' <div class="spinner-border" role="status" style="width:1rem !important;height:1rem !important"> <span class="visually-hidden">Loading...</span>  </div>';
@@ -234,7 +236,9 @@ $(document).ready(function() {
 
                 },
                 error: function(response) {
-                    msjAlert(JSON.parse(response.responseText).message, true)
+                    msjAlert("Se produjo un error",true)
+
+                    // msjAlert(JSON.parse(response.responseText).message, true)
 
                 }
             }); // ajax
@@ -307,7 +311,9 @@ $(document).ready(function() {
                         }
                     },
                     error: function(response) {
-                        msjAlert(JSON.parse(response.responseText).message, true)
+                        msjAlert("Se produjo un error",true)
+
+                        // msjAlert(JSON.parse(response.responseText).message, true)
                     }
                 }); // ajax
 
@@ -382,7 +388,9 @@ $(document).ready(function() {
                     }
                 },
                 error: function(response) {
-                    msjAlert(JSON.parse(response.responseText).message, true)
+                    msjAlert("Se produjo un error",true)
+
+                    // msjAlert(JSON.parse(response.responseText).message, true)
 
                 }
             }); // ajax
@@ -468,7 +476,9 @@ $(document).ready(function() {
                     $(".resumen-total").text(tot)
                 },
                 error: function(response) {
-                    msjAlert(JSON.parse(response.responseText).message, true)
+                    msjAlert("Se produjo un error",true)
+
+                    // msjAlert(JSON.parse(response.responseText).message, true)
                 }
 
             });

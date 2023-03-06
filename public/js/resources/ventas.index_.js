@@ -14,15 +14,18 @@ $(document).ready(function() {
     $(document).on("click", ".listado-eliminar", async function() {
         var thi = $(this)
         var id = $(this).parent().parent().find(".id").attr("data-id");
+        var monto = $(this).parent().parent().find(".recibido").attr("data-recibido");
+        monto = parseFloat(monto).toFixed(2)
+        var modopago = $(this).parent().parent().find(".modopago").attr("data-modopago");
+        modopago = $.trim(modopago.toLowerCase())
         var url = window.location.origin + "/ventas-diarias/" + id + "/destroy";
         var data = {
             id: id
         }
-
+        
         var span =
             ' <div class="spinner-border" role="status" style="width:1rem !important;height:1rem !important"> <span class="visually-hidden">Loading...</span>  </div>';
         $(thi).html(span)
-
 
         var status = await Swal.fire({
             icon: "question",
@@ -31,33 +34,79 @@ $(document).ready(function() {
         })
 
         try {
-            if (status.isConfirmed == true && status.value == true) {
-                await $.ajax({
-                    type: "delete",
-                    url: url,
-                    data: data,
-                    dataType: "json",
-                    headers: {
-                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                    },
-                    success: function(response) {
-                        if (response.status = "success") {
-                            $(thi).parent().parent().parent().parent().parent().remove();
-
-                        }
-                        if (response.status === "success" && response.message) {
-                            msjAlert(response.message)
-                        }
-                        if (response.status === "error" && response.message) {
-                            msjAlert(response.message, true)
-                        }
-                    },
-                    error: function(response) {
-                        msjAlert(JSON.parse(response.responseText).message, true)
-                    }
-                }); // ajax
-
+            if (status.isConfirmed !== true && status.value !== true) {
+                throw new Error("")
             }
+
+            var res = await $.ajax({
+                type: "delete",
+                url: url,
+                data: data,
+                dataType: "json",
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                success: function(response) {
+                    if (response.status === "success") {
+                        $(thi).parent().parent().parent().parent().parent().remove();
+                    }
+                    if (response.status === "success" && response.message) {
+                        msjAlert(response.message)
+                    }
+                    if (response.status === "error" && response.message) {
+                        msjAlert(response.message, true)
+                    }
+                },
+                error: function(response) {
+                    msjAlert("Se produjo un error al eliminar", true)
+                    // msjAlert(JSON.parse(response.responseText).message, true)
+                }
+            }); // ajax
+
+           if( res.status === "success" && res.message === "Eliminado"){
+                var cant_ventas = $.trim($(".cantidad_completas").html())
+                cant_ventas = parseInt(cant_ventas  -1)
+                $(".cantidad_completas").html(cant_ventas)
+    
+                if( modopago === "efectivo" ){
+                    var actual = $.trim($(".monto_efectivo").html())
+                    actual = parseFloat((actual - monto)).toFixed(2)
+                    $(".monto_efectivo").html(actual)
+        
+                    var ingresos = $.trim($(".monto_completas").html())
+                    actual = parseFloat((ingresos - monto)) .toFixed(2)
+                    $(".monto_completas").html(actual)
+    
+                    var total = $.trim($(".total").html())
+                    actual = parseFloat((total - monto)) .toFixed(2)
+                    $(".monto_completas").html(actual)
+                }
+                if( modopago === "tarjeta debito" ){
+                    var actual = $.trim($(".monto_debito").html())
+                    actual = parseFloat((actual - monto)).toFixed(2)
+                    $(".monto_debito").html(actual)
+                }
+                if( modopago === "efectivo pedidosya" ){
+                    var actual = $.trim($(".monto_efectivo_pedidosya").html())
+                    actual = parseFloat((actual - monto)).toFixed(2)
+                    $(".monto_efectivo_pedidosya").html(actual)
+        
+                    var ingresos = $.trim($(".monto_completas").html())
+                    actual = parseFloat((ingresos - monto)) .toFixed(2)
+                    $(".monto_completas").html(actual)
+                    
+                    var total = $.trim($(".total").html())
+                    actual = parseFloat((total - monto)) .toFixed(2)
+                    $(".monto_completas").html(actual)
+    
+                }
+                if( modopago === "credito pedidosya" ){
+                    var actual = $.trim($(".monto_credito_pedidosya").html())
+                    actual = parseFloat((actual - monto)).toFixed(2)
+                    $(".monto_credito_pedidosya").html(actual)
+                }
+            }
+
         } catch (error) {
             $(thi).html('<i class="bi bi-trash"></i>')
         } finally {
@@ -104,10 +153,10 @@ $(document).ready(function() {
                         $(thi).parent().parent().find(".estado-envio").html("Enviado")
                         $(thi).remove();
                     }
-                    if (response.status == "success" && response.message) {
+                    if (response.status === "success" && response.message) {
                         msjAlert(response.message)
                     }
-                    if (response.status == "error" && response.message) {
+                    if (response.status === "error" && response.message) {
                         msjAlert(response.message, true)
                     }
 
@@ -187,7 +236,9 @@ $(document).ready(function() {
                 $(".listado").html(span)
             },
             success: function(response) {
-                $("#tabla").html(response);
+                if( $("#tabla")[0] ){
+                    $("#tabla").html(response);
+                }
             }
 
         });
@@ -197,9 +248,9 @@ $(document).ready(function() {
 
 
 
-    function msjAlert(msj = '', error) {
+    function msjAlert(msj = '', error=false) {
         var color = "#3cb11f";
-        if (error == true) color = "#d73813";
+        if (error === true){ color = "#d73813";}
         Toastify({
             text: msj,
             duration: 5000,

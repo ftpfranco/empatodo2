@@ -26,6 +26,14 @@ use App\VentasEstadoEnvio;
 use Codedge\Fpdf\Fpdf\Fpdf;
 use Illuminate\Http\Request;
 use App\Events\EventoPedidos;
+use App\Jobs\VentaDestroyJob;
+use App\Jobs\VentaDestroyPusherJob;
+use App\Jobs\VentaReportesCantidadMontoJob;
+use App\Jobs\VentaStorePusherJob;
+use App\Jobs\VentaUpdateCajaJob;
+use App\Jobs\VentaUpdateDetalleJob;
+use App\Jobs\VentaUpdateEnviadoPusherJob;
+use App\Jobs\VentaUpdatePusherJob;
 // use Mews\Purifier\Facades\Purifier;
 use App\VentaDetalleArticulo;
 use PhpParser\Node\Stmt\TryCatch;
@@ -48,7 +56,7 @@ class VentasController extends Controller
 
 
     public function index()
-    { 
+    {
         // $sum = Ventas::select(\DB::raw("sum(total_recibido) as monto, count(*) as cantidad ,to_char(fecha,'YYYY-MM') "))->where("eliminado",false)->where("tipoenvio_id",3)->where("pago_completo",true)->groupby(\DB::raw("to_char(fecha,'YYYY-MM')"))->get()->toarray();
         // echo "<pre>";
         // print_r($sum);
@@ -74,8 +82,12 @@ class VentasController extends Controller
         // end correr esto para reajustar pagos recibidos
 
 
-        $debito_id = 2; // tipo debito
-        $credito_id = 3; // tipo credito
+        $efectivo_id        = 1; // tipo efectivo
+        $debito_id          = 2; // tipo debito
+        $credito_id         = 3; // tipo credito
+        $efectivo_pedidosya = 8;  //tipo efectivo pedidosya
+        $credito_pedidosya  = 9;  //tipo credito pedidosya
+
         $user_id = auth()->user()->id;
 
         $t1_hora_desde = "07:30";
@@ -83,12 +95,12 @@ class VentasController extends Controller
 
         $t2_hora_desde = "16:01";
         $t2_hora_hasta = "23:59";
-        
-        if(auth()->user()->es_empleado == true){
-            $turno = Turno::select( \DB::raw("to_char(time1_start,'HH24:MI') as time1_start"),\DB::raw("to_char(time1_end,'HH24:MI') as time1_end"), \DB::raw("to_char(time2_start,'HH24:MI') as time2_start"), \DB::raw("to_char(time2_end,'HH24:MI') as time2_end"))->where("user_id",$user_id)->where("eliminado",false)->first();
+
+        if (auth()->user()->es_empleado == true) {
+            $turno = Turno::select(\DB::raw("to_char(time1_start,'HH24:MI') as time1_start"), \DB::raw("to_char(time1_end,'HH24:MI') as time1_end"), \DB::raw("to_char(time2_start,'HH24:MI') as time2_start"), \DB::raw("to_char(time2_end,'HH24:MI') as time2_end"))->where("user_id", $user_id)->where("eliminado", false)->first();
             $t1_hora_desde = $turno["time1_start"];
             $t1_hora_hasta = $turno["time1_end"];
-            
+
             $t2_hora_desde = $turno["time2_start"];
             $t2_hora_hasta = $turno["time2_end"];
         }
@@ -102,20 +114,46 @@ class VentasController extends Controller
             ->where("ventas.eliminado", false)
             ->where("ventas.pago_completo", true)
             ->where("ventas_detalle_pago.tipopago_id", $debito_id)
-            ->where("ventas_detalle_pago.eliminado",false) ; 
-        $monto_completas = Ventas::select(\DB::raw("sum(total_recibido) as cantidad"))->where("ventas.fecha", date("Y-m-d"))->where("eliminado", false)  ->whereNotIN("tipopago_id",[2,3]) ; //->where("pago_completo", true);
-        $monto_credito = VentaDetallePago::select(\DB::raw("sum(ventas_detalle_pago.monto) as cantidad"))
+            ->where("ventas_detalle_pago.eliminado", false);
+
+        // tipopago_id 2 = tarjeta debito
+        // tipopago_id 3 = tarjeta credito
+        // tipopago_id 9 = tarjeta credito pedidos ya
+        $monto_completas = Ventas::select(\DB::raw("sum(total_recibido) as cantidad"))->where("ventas.fecha", date("Y-m-d"))->where("eliminado", false)->whereNotIN("tipopago_id", [2, 3, 9 ]); //->where("pago_completo", true);
+        // $monto_credito = VentaDetallePago::select(\DB::raw("sum(ventas_detalle_pago.monto) as cantidad"))
+        //     ->leftjoin("ventas", "ventas.id", "=", "ventas_detalle_pago.venta_id")
+        //     ->where("ventas.fecha", date('Y-m-d'))
+        //     ->where("ventas.eliminado", false)
+        //     ->where("ventas.pago_completo", true)
+        //     ->where("ventas_detalle_pago.tipopago_id", $credito_id)
+        //     ->where("ventas_detalle_pago.eliminado", false);
+        $monto_efectivo = VentaDetallePago::select(\DB::raw("sum(ventas_detalle_pago.monto) as cantidad"))
             ->leftjoin("ventas", "ventas.id", "=", "ventas_detalle_pago.venta_id")
             ->where("ventas.fecha", date('Y-m-d'))
             ->where("ventas.eliminado", false)
             ->where("ventas.pago_completo", true)
-            ->where("ventas_detalle_pago.tipopago_id", $credito_id)
-            ->where("ventas_detalle_pago.eliminado",false) ; 
+            ->where("ventas_detalle_pago.tipopago_id", $efectivo_id)
+            ->where("ventas_detalle_pago.eliminado", false);
 
+        $monto_efectivo_pedidosya = VentaDetallePago::select(\DB::raw("sum(ventas_detalle_pago.monto) as cantidad"))
+            ->leftjoin("ventas", "ventas.id", "=", "ventas_detalle_pago.venta_id")
+            ->where("ventas.fecha", date('Y-m-d'))
+            ->where("ventas.eliminado", false)
+            ->where("ventas.pago_completo", true)
+            ->where("ventas_detalle_pago.tipopago_id", $efectivo_pedidosya)
+            ->where("ventas_detalle_pago.eliminado", false);
+
+        $monto_credito_pedidosya = VentaDetallePago::select(\DB::raw("sum(ventas_detalle_pago.monto) as cantidad"))
+            ->leftjoin("ventas", "ventas.id", "=", "ventas_detalle_pago.venta_id")
+            ->where("ventas.fecha", date('Y-m-d'))
+            ->where("ventas.eliminado", false)
+            ->where("ventas.pago_completo", true)
+            ->where("ventas_detalle_pago.tipopago_id", $credito_pedidosya)
+            ->where("ventas_detalle_pago.eliminado", false);
 
         $monto_egreso =  Gasto::select(\DB::raw("sum(monto) as  cantidad"))->where("fecha", date('Y-m-d'))->where("eliminado", false);
 
-        $ventas = Ventas::select('ventas.id', "ventas.detalle","ventas.cliente", "ventas.total_recibido","ventas.descuento_importe", "ventas.tipoenvio_id","ventas_estadoenvio.nombre as estadoenvio", \DB::raw("TO_CHAR(ventas.fecha, 'YYYY/MM/DD') fecha"), \DB::raw("to_char(ventas.hora,'HH24:MI') hora"), "tipopago.tipo_pago",  'ventas.monto',    'ventas.pago_completo')
+        $ventas = Ventas::select('ventas.id', "ventas.detalle", "ventas.cliente", "ventas.total_recibido", "ventas.descuento_importe", "ventas.tipoenvio_id", "ventas_estadoenvio.nombre as estadoenvio", \DB::raw("TO_CHAR(ventas.fecha, 'YYYY/MM/DD') fecha"), \DB::raw("to_char(ventas.hora,'HH24:MI') hora"), "tipopago.tipo_pago",  'ventas.monto',    'ventas.pago_completo')
             ->leftjoin("ventas_estadoenvio", "ventas_estadoenvio.id", "=", "ventas.tipoenvio_id")
             ->leftjoin("tipopago", "tipopago.id", "=", "ventas.tipopago_id")
             ->where('ventas.eliminado', false)
@@ -126,100 +164,86 @@ class VentasController extends Controller
             $campana = true;
             $cantidad_completas = $cantidad_completas->where("ventas.hora", ">=", $t1_hora_desde)->where("ventas.hora", "<=", $t1_hora_hasta)->first();
             $monto_debito =  $monto_debito->where("ventas.hora", ">=", $t1_hora_desde)->where("ventas.hora", "<=", $t1_hora_hasta)->first();
+            $monto_efectivo =  $monto_efectivo->where("ventas.hora", ">=", $t1_hora_desde)->where("ventas.hora", "<=", $t1_hora_hasta)->first();
+            $monto_efectivo_pedidosya =  $monto_efectivo_pedidosya->where("ventas.hora", ">=", $t1_hora_desde)->where("ventas.hora", "<=", $t1_hora_hasta)->first();
+            $monto_credito_pedidosya =  $monto_credito_pedidosya->where("ventas.hora", ">=", $t1_hora_desde)->where("ventas.hora", "<=", $t1_hora_hasta)->first();
             $monto_completas =   $monto_completas->where("ventas.hora", ">=", $t1_hora_desde)->where("ventas.hora", "<=", $t1_hora_hasta)->first();
-            $monto_credito =   $monto_credito->where("ventas.hora", ">=", $t1_hora_desde)->where("ventas.hora", "<=", $t1_hora_hasta)->first();
+            // $monto_credito =   $monto_credito->where("ventas.hora", ">=", $t1_hora_desde)->where("ventas.hora", "<=", $t1_hora_hasta)->first();
             $monto_egreso = $monto_egreso->where(\DB::raw("TO_CHAR(created_at, 'HH24:MI')   "), ">=", $t1_hora_desde)->where(\DB::raw("TO_CHAR(created_at, 'HH24:MI') "), "<=", $t1_hora_hasta)->first();
             $ventas = $ventas->where("ventas.hora", ">=", $t1_hora_desde)->where("ventas.hora", "<=", $t1_hora_hasta);
             $ventas = $ventas->orderby("ventas.id", 'desc')->get();
         }
 
-        if(date("H:i")>=$t2_hora_desde && date("H:i")<= $t2_hora_hasta){
-            $campana =true;
+        if (date("H:i") >= $t2_hora_desde && date("H:i") <= $t2_hora_hasta) {
+            $campana = true;
             $cantidad_completas =  $cantidad_completas->where("ventas.hora", ">=", $t2_hora_desde)->where("ventas.hora", "<=", $t2_hora_hasta)->first();
             $monto_debito =  $monto_debito->where("ventas.hora", ">=", $t2_hora_desde)->where("ventas.hora", "<=", $t2_hora_hasta)->first();
+            $monto_efectivo =  $monto_efectivo->where("ventas.hora", ">=", $t2_hora_desde)->where("ventas.hora", "<=", $t2_hora_hasta)->first();
+            $monto_efectivo_pedidosya =  $monto_efectivo_pedidosya->where("ventas.hora", ">=", $t2_hora_desde)->where("ventas.hora", "<=", $t2_hora_hasta)->first();
+            $monto_credito_pedidosya =  $monto_credito_pedidosya->where("ventas.hora", ">=", $t2_hora_desde)->where("ventas.hora", "<=", $t2_hora_hasta)->first();
             $monto_completas = $monto_completas->where("ventas.hora", ">=", $t2_hora_desde)->where("ventas.hora", "<=", $t2_hora_hasta)->first();
-            $monto_credito =   $monto_credito->where("ventas.hora", ">=", $t2_hora_desde)->where("ventas.hora", "<=", $t2_hora_hasta)->first();
-            $monto_egreso = $monto_egreso ->where(\DB::raw("TO_CHAR(created_at, 'HH24:MI') "), ">=", $t2_hora_desde)->where(\DB::raw("TO_CHAR(created_at, 'HH24:MI') "), "<=", $t2_hora_hasta)->first();
+            // $monto_credito =   $monto_credito->where("ventas.hora", ">=", $t2_hora_desde)->where("ventas.hora", "<=", $t2_hora_hasta)->first();
+            $monto_egreso = $monto_egreso->where(\DB::raw("TO_CHAR(created_at, 'HH24:MI') "), ">=", $t2_hora_desde)->where(\DB::raw("TO_CHAR(created_at, 'HH24:MI') "), "<=", $t2_hora_hasta)->first();
             $ventas = $ventas->where("ventas.hora", ">=", $t2_hora_desde)->where("ventas.hora", "<=", $t2_hora_hasta);
             $ventas = $ventas->orderby("ventas.id", 'desc')->get();
         }
 
-        
-        if($campana == false)  $ventas = array();
-        $cantidad_completas =  isset($cantidad_completas->cantidad) ? $cantidad_completas->cantidad: 0;
+
+        if ($campana == false)  $ventas = array();
+        $cantidad_completas =  isset($cantidad_completas->cantidad) ? $cantidad_completas->cantidad : 0;
         $monto_completas = isset($monto_completas->cantidad) ? number_format($monto_completas->cantidad, 2, '.', '')  : 0;
-        $monto_debito =  isset($monto_debito->cantidad) ?number_format($monto_debito->cantidad, 2, '.', '') : 0;
-        $monto_credito = isset($monto_credito->cantidad) ? number_format($monto_credito->cantidad, 2, '.', '') : 0;
+        $monto_debito =  isset($monto_debito->cantidad) ? number_format($monto_debito->cantidad, 2, '.', '') : 0;
+        $monto_efectivo =  isset($monto_efectivo->cantidad) ? number_format($monto_efectivo->cantidad, 2, '.', '') : 0;
+        $monto_efectivo_pedidosya =  isset($monto_efectivo_pedidosya->cantidad) ? number_format($monto_efectivo_pedidosya->cantidad, 2, '.', '') : 0;
+        $monto_credito_pedidosya =  isset($monto_credito_pedidosya->cantidad) ? number_format($monto_credito_pedidosya->cantidad, 2, '.', '') : 0;
+        // $monto_credito = isset($monto_credito->cantidad) ? number_format($monto_credito->cantidad, 2, '.', '') : 0;
         $monto_egreso = isset($monto_egreso->cantidad) ? number_format($monto_egreso->cantidad, 2, '.', '') : 0;
 
         $total =   ($monto_completas) - $monto_egreso;
 
 
-        return view("ventas.index", compact("ventas",  "cantidad_completas",   "monto_completas", "monto_debito", "monto_credito", "monto_egreso", "total"));
+        // return view("ventas.index", compact("ventas",  "cantidad_completas",   "monto_completas", "monto_debito", "monto_credito", "monto_egreso", "total"));
+        return view("ventas.index", compact("ventas",  "cantidad_completas",   "monto_completas", "monto_debito","monto_efectivo","monto_efectivo_pedidosya","monto_credito_pedidosya", "monto_egreso", "total"));
     }
 
 
-    public function enviado(Request $request ){
-        if(!request()->ajax()) return redirect()->route("ventas");
-        
+    public function enviado(Request $request)
+    {
+        if (!request()->ajax()) return redirect()->route("ventas");
+
         $validator = \Validator::make($request->all(), [
-            'id' => 'nullable|numeric',
+            'id' => 'required|numeric',
+        ],[
+            'id.numeric'=> "Se produjo un error",
+            'id.required'=> "Se produjo un error",
         ]);
 
         if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()->all()]);
+            return response()->json(["status"=>"error",'message' => $validator->errors()->all()]);
         }
 
-        $id = request()->id ? request()->id: null; 
-        $d = null;
-        if($id){
-            $d = Ventas::where("id",$id)->where("eliminado",false)->update([
-                "tipoenvio_id" => 3, // enviado 
-            ]);
+        $id = request()->id ? request()->id : null;
 
-            if($d){
-                $data = array();
-                $data["estado"] = "eliminar";
-                $data["venta_id"] =  $id;
-                $data["tipo"] =  "Marcar como enviado";
-                $data["fecha"] = date("Y-m-d H:i") ;
-                // generar evento de pedido
-                try {
-                    $options = array(
-                        'cluster' => env("PUSHER_APP_CLUSTER"),
-                        'encrypted' => true
-                    );
-                    $pusher = new Pusher(
-                        env('PUSHER_APP_KEY'),
-                        env('PUSHER_APP_SECRET'),
-                        env('PUSHER_APP_ID'),
-                        $options
-                    );
-                    $pusher->trigger('pedidos-pendientes', 'App\Events\EventoPedidos', $data );
-                } catch (\Exception $th) {
-                    // throw $th;
-                    Log::error($th->getMessage());
-                }
-                // end generar evento de pedido
-                // try {
-                //     event(new EventoPedidos( $data));
-                // } catch (\Exception $th) {
-                //     //throw $th;
-                //     Log::error($th->getMessage());
-                // }
-            }
-        }
+        $d = Ventas::where("id", $id)->where("eliminado", false)->update([
+            "tipoenvio_id" => 3, // enviado 
+        ]);
 
         if ($d) {
-            return response()->json(["status" => "success",  "message" => "Guardado!", "data"=>$id]);
+            $data = array();
+            $data["estado"] = "eliminar";
+            $data["venta_id"] =  $id;
+            $data["tipo"] =  "Marcar como enviado";
+            $data["fecha"] = date("Y-m-d H:i");
+            VentaUpdateEnviadoPusherJob::dispatch($data);
+            return response()->json(["status" => "success",  "message" => "Guardado!", "data" => $id]);
         }
+ 
         return response()->json(["status" => "error", "message" => "Error al guardar!"]);
-
     }
 
     public function filtro(Request $request)
     {
-        if(!request()->ajax()) return redirect()->route("ventas");
+        if (!request()->ajax()) return redirect()->route("ventas");
 
         $validator = \Validator::make($request->all(), [
             'fecha_desde' => 'nullable|date',
@@ -227,14 +251,17 @@ class VentasController extends Controller
             // 'cliente' => 'nullable|numeric',
             'empleado' => 'nullable|numeric',
             'estadopago' => 'nullable|numeric',
+        ],[
+            'fecha_desde.date'=> "La Fecha Desde ingresada no es válida",
+            'fecha_hasta.date'=> "La Fecha Hasta ingresada no es válida",
         ]);
 
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()->all()]);
         }
 
-        $fecha_desde = request()->fecha_desde !==null ? request()->fecha_desde : null;
-        $fecha_hasta = request()->fecha_hasta !==null ? request()->fecha_hasta : null;
+        $fecha_desde = request()->fecha_desde !== null ? request()->fecha_desde : null;
+        $fecha_hasta = request()->fecha_hasta !== null ? request()->fecha_hasta : null;
         // $cliente = (request()->cliente != 0) ? request()->cliente : null;
         $empleado = request()->empleado ? request()->empleado : null;
         $estadopago = request()->estadopago;
@@ -251,12 +278,10 @@ class VentasController extends Controller
         if ($fecha_desde !== null && $fecha_hasta !== null) {
             // $ventas = $ventas->whereBetween("ventas.fecha", [$fecha_desde, $fecha_hasta]);
             $ventas = $ventas->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), ">=", $fecha_desde)->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), ">=", $fecha_hasta);
-
         }
         if ($fecha_desde !== null && $fecha_hasta == null) {
             // $ventas = $ventas->whereBetween("ventas.fecha", [$fecha_desde, $fecha_desde]);
             $ventas = $ventas->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), ">=", $fecha_desde)->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), ">=", $fecha_desde);
-
         }
         if ($fecha_desde == null && $fecha_hasta !== null) {
             $ventas = $ventas->whereBetween("ventas.fecha", [$fecha_hasta, $fecha_hasta]);
@@ -284,51 +309,87 @@ class VentasController extends Controller
     {
 
         $ayer =  date('Y-m-d', strtotime("-1 day"));
-        $debito_id = 2; // tipo debito
-        $credito_id = 3; // tipo credito
-        $tipopagos =  TipoPago::select("id", "tipo_pago")->where("eliminado", false)->pluck("tipo_pago", "id");
-        $tipo_envios = VentasEstadoEnvio::select("nombre","id") ->orderby("id","asc")->pluck("nombre","id");
+        $efectivo_id        = 1; // tipo efectivo
+        $debito_id          = 2; // tipo debito
+        // $credito_id         = 3; // tipo credito
+        $efectivo_pedidosya = 8;  //tipo efectivo pedidosya
+        $credito_pedidosya  = 9;  //tipo credito pedidosya
 
-        $cantidad_completas = Ventas::select(\DB::raw("count(*) as cantidad"))->where("ventas.fecha", $ayer) ->where("tipoenvio_id",3)->where("eliminado", false)->where("pago_completo", true)->first();
+        $tipopagos =  TipoPago::select("id", "tipo_pago")->where("eliminado", false)->pluck("tipo_pago", "id");
+        $tipo_envios = VentasEstadoEnvio::select("nombre", "id")->orderby("id", "asc")->pluck("nombre", "id");
+
+        $cantidad_completas = Ventas::select(\DB::raw("count(*) as cantidad"))->where("ventas.fecha", $ayer)->where("tipoenvio_id", 3)->where("eliminado", false)->where("pago_completo", true)->first();
         $monto_debito = VentaDetallePago::select(\DB::raw("sum(ventas_detalle_pago.monto) as cantidad"))
             ->leftjoin("ventas", "ventas.id", "=", "ventas_detalle_pago.venta_id")
             ->where("ventas.fecha", $ayer)
             ->where("ventas.eliminado", false)
             ->where("ventas.pago_completo", true)
-            ->where("ventas.tipoenvio_id",3)
-            ->where("ventas_detalle_pago.tipopago_id", $debito_id) 
-            ->where("ventas_detalle_pago.eliminado", false) 
+            ->where("ventas.tipoenvio_id", 3)
+            ->where("ventas_detalle_pago.tipopago_id", $debito_id)
+            ->where("ventas_detalle_pago.eliminado", false)
             ->first();
-        $monto_completas = Ventas::select(\DB::raw("sum(total_recibido) as cantidad"))->where("ventas.fecha", $ayer)->where("eliminado", false) ->where("tipoenvio_id",3) ->whereNotIN("tipopago_id",[2,3])->first(); //->where("pago_completo", true);
-        $monto_credito = VentaDetallePago::select(\DB::raw("sum(ventas_detalle_pago.monto) as cantidad"))
+         
+        $monto_efectivo = VentaDetallePago::select(\DB::raw("sum(ventas_detalle_pago.monto) as cantidad"))
             ->leftjoin("ventas", "ventas.id", "=", "ventas_detalle_pago.venta_id")
             ->where("ventas.fecha", $ayer)
             ->where("ventas.eliminado", false)
             ->where("ventas.pago_completo", true)
-            ->where("ventas.tipoenvio_id",3)
-            ->where("ventas_detalle_pago.tipopago_id", $credito_id)
+            ->where("ventas.tipoenvio_id", 3)
+            ->where("ventas_detalle_pago.tipopago_id", $efectivo_id)
             ->where("ventas_detalle_pago.eliminado", false)
             ->first();
+
+        $monto_efectivo_pedidosya = VentaDetallePago::select(\DB::raw("sum(ventas_detalle_pago.monto) as cantidad"))
+            ->leftjoin("ventas", "ventas.id", "=", "ventas_detalle_pago.venta_id")
+            ->where("ventas.fecha", $ayer)
+            ->where("ventas.eliminado", false)
+            ->where("ventas.pago_completo", true)
+            ->where("ventas.tipoenvio_id", 3)
+            ->where("ventas_detalle_pago.tipopago_id", $efectivo_pedidosya)
+            ->where("ventas_detalle_pago.eliminado", false)
+            ->first();
+        $monto_credito_pedidosya = VentaDetallePago::select(\DB::raw("sum(ventas_detalle_pago.monto) as cantidad"))
+            ->leftjoin("ventas", "ventas.id", "=", "ventas_detalle_pago.venta_id")
+            ->where("ventas.fecha", $ayer)
+            ->where("ventas.eliminado", false)
+            ->where("ventas.pago_completo", true)
+            ->where("ventas.tipoenvio_id", 3)
+            ->where("ventas_detalle_pago.tipopago_id", $credito_pedidosya)
+            ->where("ventas_detalle_pago.eliminado", false)
+            ->first();
+        $monto_completas = Ventas::select(\DB::raw("sum(total_recibido) as cantidad"))->where("ventas.fecha", $ayer)->where("eliminado", false)->where("tipoenvio_id", 3)->whereNotIN("tipopago_id", [2, 3 , 9])->first(); //->where("pago_completo", true);
+        // $monto_credito = VentaDetallePago::select(\DB::raw("sum(ventas_detalle_pago.monto) as cantidad"))
+        //     ->leftjoin("ventas", "ventas.id", "=", "ventas_detalle_pago.venta_id")
+        //     ->where("ventas.fecha", $ayer)
+        //     ->where("ventas.eliminado", false)
+        //     ->where("ventas.pago_completo", true)
+        //     ->where("ventas.tipoenvio_id", 3)
+        //     ->where("ventas_detalle_pago.tipopago_id", $credito_id)
+        //     ->where("ventas_detalle_pago.eliminado", false)
+        //     ->first();
         $monto_egreso =  Gasto::select(\DB::raw("sum(monto) as  cantidad"))->where("fecha", $ayer)->where("eliminado", false)->first();
 
         $cantidad_completas =  $cantidad_completas->cantidad;
         $monto_completas = number_format($monto_completas->cantidad, 2, '.', '');
         $monto_debito = number_format($monto_debito->cantidad, 2, '.', '');
-        $monto_credito = number_format($monto_credito->cantidad, 2, '.', '');
+        // $monto_credito = number_format($monto_credito->cantidad, 2, '.', '');
+        $monto_efectivo = number_format($monto_efectivo->cantidad, 2, '.', '');
+        $monto_efectivo_pedidosya = number_format($monto_efectivo_pedidosya->cantidad, 2, '.', '');
+        $monto_credito_pedidosya = number_format($monto_credito_pedidosya->cantidad, 2, '.', '');
         $monto_egreso = number_format($monto_egreso->cantidad, 2, '.', '');
 
         $total =   ($monto_completas) - $monto_egreso;
 
-        $ventas = Ventas::select('ventas.id', "ventas.cliente", "ventas.descuento_importe", "ventas.total_recibido", "ventas.tipoenvio_id", "ventas_estadoenvio.nombre as estadoenvio", \DB::raw("TO_CHAR(ventas.fecha, 'YYYY/MM/DD') fecha"),  \DB::raw("to_char(ventas.hora,'HH24:MI') hora") ,"tipopago.tipo_pago",  'ventas.monto',    'ventas.pago_completo')
+        $ventas = Ventas::select('ventas.id', "ventas.cliente", "ventas.descuento_importe", "ventas.total_recibido", "ventas.tipoenvio_id", "ventas_estadoenvio.nombre as estadoenvio", \DB::raw("TO_CHAR(ventas.fecha, 'YYYY/MM/DD') fecha"),  \DB::raw("to_char(ventas.hora,'HH24:MI') hora"), "tipopago.tipo_pago",  'ventas.monto',    'ventas.pago_completo')
             ->leftjoin("ventas_estadoenvio", "ventas_estadoenvio.id", "=", "ventas.tipoenvio_id")
             ->leftjoin("tipopago", "tipopago.id", "=", "ventas.tipopago_id")
             ->where('ventas.eliminado', false)
             ->where("ventas.fecha", $ayer)
-            ->orderby("ventas.id","desc")
+            ->orderby("ventas.id", "desc")
             ->get();
         $render = false;
 
-        return view("ventas.listado", compact("ventas", "tipo_envios" ,  "cantidad_completas",   "monto_completas", "monto_debito", "monto_credito", "monto_egreso", "total", "tipopagos", "render"));
+        return view("ventas.listado", compact("ventas", "tipo_envios",  "cantidad_completas",   "monto_completas", "monto_debito","monto_efectivo","monto_efectivo_pedidosya","monto_credito_pedidosya", "monto_credito", "monto_egreso", "total", "tipopagos", "render"));
     }
 
 
@@ -346,25 +407,34 @@ class VentasController extends Controller
             'empleado' => 'nullable|numeric',
             'estadopedido' => 'nullable|numeric',
             'estadopago' => 'nullable|numeric',
+        ],[
+            "fecha_desde.date" => "La Fecha Desde ingresada no es válida",
+            "fecha_hasta.date" => "La Fecha Hasta ingresada no es válida",
+            "cliente.numeric" => "El Cliente ingresado no es válido",
+            "tipopago.numeric" => "El Modo de Pago no es válido",
         ]);
 
         if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()->all()]);
+            return response()->json(["status"=>"error",'message' => $validator->errors()->all()]);
         }
 
 
 
         $fecha_minimo = new DateTime("2021-11-19");
-        $fecha_desde = request()->fecha_desde!==null ? request()->fecha_desde : null;
-        $fecha_hasta = request()->fecha_hasta !==null ? request()->fecha_hasta : null;
+        $fecha_desde = request()->fecha_desde !== null ? request()->fecha_desde : null;
+        $fecha_hasta = request()->fecha_hasta !== null ? request()->fecha_hasta : null;
         $cliente = (request()->cliente != 0) ? request()->cliente : null;
         $empleado = request()->empleado ? request()->empleado : null;
         $tipopago = request()->tipopago < 0 ? null : request()->tipopago;
-        $estadopedido = request()->estadopedido < 0 ? null:  request()->estadopedido;
+        $estadopedido = request()->estadopedido < 0 ? null :  request()->estadopedido;
         $estadopago = request()->estadopago < 0 ? null :  request()->estadopago;
-        $pagina = request()->page >1 ? false : true;
-        $debito_id = 2; // tipo debito
-        $credito_id = 3; // tipo credito
+        $pagina = request()->page > 1 ? false : true;
+        $efectivo_id        = 1; // tipo efectivo
+        $debito_id          = 2; // tipo debito
+        // $credito_id         = 3; // tipo credito
+        $efectivo_pedidosya = 8;  //tipo efectivo pedidosya
+        $credito_pedidosya  = 9;  //tipo credito pedidosya
+
         if (request()->estadopago == 0) $estadopago = null;
         if (request()->estadopago == 1) $estadopago = true; // pago completo
         if (request()->estadopago == 2) $estadopago = false; // pago incompleto
@@ -374,109 +444,143 @@ class VentasController extends Controller
 
         $fd =  $fecha_desde1->diff($fecha_minimo);
         $fh =  $fecha_hasta1->diff($fecha_minimo);
-        
-        if($fd->days == 0 ) $fecha_desde ==null;
-        if($fh->days == 0 ) $fecha_hasta =null;
- 
- 
-        $cantidad_completas = Ventas::select(\DB::raw("count(*) as cantidad"))->where("eliminado", false)  ->where("tipoenvio_id",3);
+
+        if ($fd->days == 0) $fecha_desde == null;
+        if ($fh->days == 0) $fecha_hasta = null;
+
+
+        $cantidad_completas = Ventas::select(\DB::raw("count(*) as cantidad"))->where("eliminado", false)->where("tipoenvio_id", 3);
 
         $monto_debito = VentaDetallePago::select(\DB::raw("sum(ventas_detalle_pago.monto) as cantidad"))
             ->leftjoin("ventas", "ventas.id", "=", "ventas_detalle_pago.venta_id")
             ->where("ventas.eliminado", false)
-            ->where("ventas.tipoenvio_id", 3 )
+            ->where("ventas.tipoenvio_id", 3)
             ->where("ventas_detalle_pago.tipopago_id", $debito_id)
-            ->where("ventas_detalle_pago.eliminado", false) ; 
-        $monto_completas = Ventas::select(\DB::raw("sum(total_recibido) as cantidad"))->where("eliminado", false) ->where("tipoenvio_id",3)->whereNotIN("tipopago_id",[2,3]) ; //->where("pago_completo", true);
-        $monto_credito = VentaDetallePago::select(\DB::raw("sum(ventas_detalle_pago.monto) as cantidad"))
+            ->where("ventas_detalle_pago.eliminado", false);
+        $monto_completas = Ventas::select(\DB::raw("sum(total_recibido) as cantidad"))->where("eliminado", false)->where("tipoenvio_id", 3)->whereNotIN("tipopago_id", [2, 3 , 9]); //->where("pago_completo", true);
+        // $monto_credito = VentaDetallePago::select(\DB::raw("sum(ventas_detalle_pago.monto) as cantidad"))
+        //     ->leftjoin("ventas", "ventas.id", "=", "ventas_detalle_pago.venta_id")
+        //     ->where("ventas.eliminado", false)
+        //     ->where("ventas.tipoenvio_id", 3)
+        //     ->where("ventas_detalle_pago.tipopago_id", $credito_id)
+        //     ->where("ventas_detalle_pago.eliminado", false);
+        $monto_efectivo = VentaDetallePago::select(\DB::raw("sum(ventas_detalle_pago.monto) as cantidad"))
             ->leftjoin("ventas", "ventas.id", "=", "ventas_detalle_pago.venta_id")
             ->where("ventas.eliminado", false)
-            ->where("ventas.tipoenvio_id",3)
-            ->where("ventas_detalle_pago.tipopago_id", $credito_id)
-            ->where("ventas_detalle_pago.eliminado", false); 
+            ->where("ventas.tipoenvio_id", 3)
+            ->where("ventas_detalle_pago.tipopago_id", $efectivo_id)
+            ->where("ventas_detalle_pago.eliminado", false);
+
+        $monto_efectivo_pedidosya = VentaDetallePago::select(\DB::raw("sum(ventas_detalle_pago.monto) as cantidad"))
+            ->leftjoin("ventas", "ventas.id", "=", "ventas_detalle_pago.venta_id")
+            ->where("ventas.eliminado", false)
+            ->where("ventas.tipoenvio_id", 3)
+            ->where("ventas_detalle_pago.tipopago_id", $efectivo_pedidosya)
+            ->where("ventas_detalle_pago.eliminado", false);
+        $monto_credito_pedidosya = VentaDetallePago::select(\DB::raw("sum(ventas_detalle_pago.monto) as cantidad"))
+            ->leftjoin("ventas", "ventas.id", "=", "ventas_detalle_pago.venta_id")
+            ->where("ventas.eliminado", false)
+            ->where("ventas.tipoenvio_id", 3)
+            ->where("ventas_detalle_pago.tipopago_id", $credito_pedidosya)
+            ->where("ventas_detalle_pago.eliminado", false);
         $monto_egreso =  Gasto::select(\DB::raw("sum(monto) as  cantidad"))->where("eliminado", false);
 
 
-        $ventas = Ventas::select('ventas.id', "ventas.cliente","ventas.descuento_importe", "ventas.total_recibido", "ventas_estadoenvio.nombre as estadoenvio",  \DB::raw("TO_CHAR(ventas.fecha, 'YYYY/MM/DD') fecha"),  \DB::raw("to_char(ventas.hora,'HH24:MI') hora") ,  'ventas.monto',    'ventas.pago_completo', "tipopago.tipo_pago")
+        $ventas = Ventas::select('ventas.id', "ventas.cliente", "ventas.descuento_importe", "ventas.total_recibido", "ventas_estadoenvio.nombre as estadoenvio",  \DB::raw("TO_CHAR(ventas.fecha, 'YYYY/MM/DD') fecha"),  \DB::raw("to_char(ventas.hora,'HH24:MI') hora"),  'ventas.monto',    'ventas.pago_completo', "tipopago.tipo_pago")
             ->leftjoin("ventas_estadoenvio", "ventas_estadoenvio.id", "=", "ventas.tipoenvio_id")
             ->leftjoin("tipopago", "tipopago.id", "=", "ventas.tipopago_id")
             ->where('ventas.eliminado', false);
 
-        if($estadopedido !==null) {
-            $ventas = $ventas ->where('ventas.tipoenvio_id',$estadopedido);
-
+        if ($estadopedido !== null) {
+            $ventas = $ventas->where('ventas.tipoenvio_id', $estadopedido);
         }
 
 
         if ($fecha_desde !== null && $fecha_hasta !== null) {
             // $ventas = $ventas->whereBetween(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD')     "), [$fecha_desde, $fecha_hasta]);
             $ventas = $ventas->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), ">=", $fecha_desde)->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), "<=", $fecha_hasta);
-            if($pagina ){
-                $cantidad_completas =  $cantidad_completas->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), ">=", $fecha_desde)->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), "<=", $fecha_hasta) ;
-                $monto_debito = $monto_debito->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), ">=", $fecha_desde)->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), "<=", $fecha_hasta) ;
-                $monto_completas = $monto_completas->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), ">=", $fecha_desde)->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), "<=", $fecha_hasta) ;
-                $monto_credito = $monto_credito->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), ">=", $fecha_desde)->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), "<=", $fecha_hasta) ;
-                $monto_egreso = $monto_egreso->where(\DB::raw("to_char( gasto.fecha, 'YYYY-MM-DD') "), ">=", $fecha_desde)->where(\DB::raw("to_char( gasto.fecha, 'YYYY-MM-DD') "), "<=", $fecha_hasta) ;
-
+            if ($pagina) {
+                $cantidad_completas =  $cantidad_completas->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), ">=", $fecha_desde)->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), "<=", $fecha_hasta);
+                $monto_debito = $monto_debito->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), ">=", $fecha_desde)->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), "<=", $fecha_hasta);
+                $monto_efectivo = $monto_efectivo->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), ">=", $fecha_desde)->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), "<=", $fecha_hasta);
+                $monto_efectivo_pedidosya = $monto_efectivo_pedidosya->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), ">=", $fecha_desde)->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), "<=", $fecha_hasta);
+                $monto_credito_pedidosya = $monto_credito_pedidosya->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), ">=", $fecha_desde)->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), "<=", $fecha_hasta);
+                $monto_completas = $monto_completas->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), ">=", $fecha_desde)->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), "<=", $fecha_hasta);
+                // $monto_credito = $monto_credito->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), ">=", $fecha_desde)->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), "<=", $fecha_hasta);
+                $monto_egreso = $monto_egreso->where(\DB::raw("to_char( gasto.fecha, 'YYYY-MM-DD') "), ">=", $fecha_desde)->where(\DB::raw("to_char( gasto.fecha, 'YYYY-MM-DD') "), "<=", $fecha_hasta);
             }
         }
         if ($fecha_desde !== null && $fecha_hasta == null) {
             $ventas = $ventas->whereBetween(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), [$fecha_desde, $fecha_desde]);
             // $ventas = $ventas->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), ">=", $fecha_desde)->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), "<=", $fecha_desde);
-            if($pagina ){
-                $cantidad_completas =  $cantidad_completas->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), ">=", $fecha_desde)->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), "<=", $fecha_desde) ;
-                $monto_debito = $monto_debito->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), ">=", $fecha_desde)->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), "<=", $fecha_desde) ;
-                $monto_completas = $monto_completas->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), ">=", $fecha_desde)->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), "<=", $fecha_desde) ;
-                $monto_credito = $monto_credito->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), ">=", $fecha_desde)->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), "<=", $fecha_desde) ;
-                $monto_egreso = $monto_egreso->where(\DB::raw("to_char( gasto.fecha, 'YYYY-MM-DD') "), ">=", $fecha_desde)->where(\DB::raw("to_char( gasto.fecha, 'YYYY-MM-DD') "), "<=", $fecha_desde) ;
+            if ($pagina) {
+                $cantidad_completas =  $cantidad_completas->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), ">=", $fecha_desde)->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), "<=", $fecha_desde);
+                $monto_debito = $monto_debito->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), ">=", $fecha_desde)->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), "<=", $fecha_desde);
+                $monto_efectivo = $monto_efectivo->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), ">=", $fecha_desde)->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), "<=", $fecha_desde);
+                $monto_efectivo_pedidosya = $monto_efectivo_pedidosya->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), ">=", $fecha_desde)->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), "<=", $fecha_desde);
+                $monto_credito_pedidosya = $monto_credito_pedidosya->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), ">=", $fecha_desde)->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), "<=", $fecha_desde);
+                $monto_completas = $monto_completas->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), ">=", $fecha_desde)->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), "<=", $fecha_desde);
+                // $monto_credito = $monto_credito->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), ">=", $fecha_desde)->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), "<=", $fecha_desde);
+                $monto_egreso = $monto_egreso->where(\DB::raw("to_char( gasto.fecha, 'YYYY-MM-DD') "), ">=", $fecha_desde)->where(\DB::raw("to_char( gasto.fecha, 'YYYY-MM-DD') "), "<=", $fecha_desde);
             }
         }
         if ($fecha_desde == null && $fecha_hasta !== null) {
             // $ventas = $ventas->whereBetween(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), [$fecha_hasta, $fecha_hasta]);
             $ventas = $ventas->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), ">=", $fecha_hasta)->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), "<=", $fecha_hasta);
-            if($pagina ){
-                $cantidad_completas =  $cantidad_completas->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), ">=", $fecha_hasta)->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), "<=", $fecha_hasta) ;
-                $monto_debito = $monto_debito->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), ">=", $fecha_hasta)->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), "<=", $fecha_hasta) ;
-                $monto_completas = $monto_completas->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), ">=", $fecha_hasta)->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), "<=", $fecha_hasta) ;
-                $monto_credito = $monto_credito->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), ">=", $fecha_hasta)->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), "<=", $fecha_hasta) ;
-                $monto_egreso = $monto_egreso->where(\DB::raw("to_char( gasto.fecha, 'YYYY-MM-DD') "), ">=", $fecha_hasta)->where(\DB::raw("to_char( gasto.fecha, 'YYYY-MM-DD') "), "<=", $fecha_hasta) ;
+            if ($pagina) {
+                $cantidad_completas =  $cantidad_completas->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), ">=", $fecha_hasta)->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), "<=", $fecha_hasta);
+                $monto_debito = $monto_debito->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), ">=", $fecha_hasta)->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), "<=", $fecha_hasta);
+                $monto_efectivo = $monto_efectivo->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), ">=", $fecha_hasta)->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), "<=", $fecha_hasta);
+                $monto_efectivo_pedidosya = $monto_efectivo_pedidosya->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), ">=", $fecha_hasta)->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), "<=", $fecha_hasta);
+                $monto_credito_pedidosya = $monto_credito_pedidosya->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), ">=", $fecha_hasta)->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), "<=", $fecha_hasta);
+                $monto_completas = $monto_completas->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), ">=", $fecha_hasta)->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), "<=", $fecha_hasta);
+                // $monto_credito = $monto_credito->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), ">=", $fecha_hasta)->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), "<=", $fecha_hasta);
+                $monto_egreso = $monto_egreso->where(\DB::raw("to_char( gasto.fecha, 'YYYY-MM-DD') "), ">=", $fecha_hasta)->where(\DB::raw("to_char( gasto.fecha, 'YYYY-MM-DD') "), "<=", $fecha_hasta);
             }
-
         }
 
         if ($fecha_desde == null && $fecha_hasta == null) {
             $fecha_desde = $fecha_hasta = date("Y-m-d");
             // $ventas = $ventas->whereBetween(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), [$fecha_hasta, $fecha_hasta]);
             $ventas = $ventas->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), ">=", $fecha_hasta)->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), "<=", $fecha_hasta);
-            $cantidad_completas =  $cantidad_completas->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), ">=", $fecha_hasta)->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), "<=", $fecha_hasta) ;
-            $monto_debito = $monto_debito->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), ">=", $fecha_hasta)->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), "<=", $fecha_hasta) ;
-            $monto_completas = $monto_completas->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), ">=", $fecha_hasta)->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), "<=", $fecha_hasta) ;
-            $monto_credito = $monto_credito->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), ">=", $fecha_hasta)->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), "<=", $fecha_hasta) ;
-            $monto_egreso = $monto_egreso->where(\DB::raw("to_char( gasto.fecha, 'YYYY-MM-DD') "), ">=", $fecha_hasta)->where(\DB::raw("to_char( gasto.fecha, 'YYYY-MM-DD') "), "<=", $fecha_hasta) ;
+            $cantidad_completas =  $cantidad_completas->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), ">=", $fecha_hasta)->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), "<=", $fecha_hasta);
+            $monto_debito = $monto_debito->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), ">=", $fecha_hasta)->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), "<=", $fecha_hasta);
+            $monto_efectivo = $monto_efectivo->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), ">=", $fecha_hasta)->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), "<=", $fecha_hasta);
+            $monto_efectivo_pedidosya = $monto_efectivo_pedidosya->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), ">=", $fecha_hasta)->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), "<=", $fecha_hasta);
+            $monto_credito_pedidosya = $monto_credito_pedidosya->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), ">=", $fecha_hasta)->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), "<=", $fecha_hasta);
+            $monto_completas = $monto_completas->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), ">=", $fecha_hasta)->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), "<=", $fecha_hasta);
+            // $monto_credito = $monto_credito->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), ">=", $fecha_hasta)->where(\DB::raw("to_char( ventas.fecha, 'YYYY-MM-DD') "), "<=", $fecha_hasta);
+            $monto_egreso = $monto_egreso->where(\DB::raw("to_char( gasto.fecha, 'YYYY-MM-DD') "), ">=", $fecha_hasta)->where(\DB::raw("to_char( gasto.fecha, 'YYYY-MM-DD') "), "<=", $fecha_hasta);
         }
-       
+
 
         if ($cliente !== null) {
             $ventas = $ventas->where("ventas.cliente_id", $cliente);
         }
         if ($tipopago !== null) {
-            $ventas = $ventas ->where("ventas.tipopago_id", $tipopago);
-            if($pagina){
-                $cantidad_completas =  $cantidad_completas  ->where("ventas.tipopago_id", $tipopago); 
-                $monto_completas = $monto_completas ->where("ventas.tipopago_id", $tipopago);
-                $monto_debito = $monto_debito ->where("ventas.tipopago_id", $tipopago) ;
-                $monto_credito = $monto_credito  ->where("ventas.tipopago_id", $tipopago) ;
-                $monto_egreso = $monto_egreso ->where("gasto.tipopago_id", $tipopago);
+            $ventas = $ventas->where("ventas.tipopago_id", $tipopago);
+            if ($pagina) {
+                $cantidad_completas =  $cantidad_completas->where("ventas.tipopago_id", $tipopago);
+                $monto_completas = $monto_completas->where("ventas.tipopago_id", $tipopago);
+                $monto_debito = $monto_debito->where("ventas.tipopago_id", $tipopago);
+                $monto_efectivo = $monto_efectivo->where("ventas.tipopago_id", $tipopago);
+                $monto_efectivo_pedidosya = $monto_efectivo_pedidosya->where("ventas.tipopago_id", $tipopago);
+                $monto_credito_pedidosya = $monto_credito_pedidosya->where("ventas.tipopago_id", $tipopago);
+                // $monto_credito = $monto_credito->where("ventas.tipopago_id", $tipopago);
+                $monto_egreso = $monto_egreso->where("gasto.tipopago_id", $tipopago);
             }
         }
 
         if ($estadopago !== null) {
             $ventas = $ventas->where("ventas.pago_completo", $estadopago);
-            if($pagina){
-                $cantidad_completas =  $cantidad_completas   ->where("ventas.pago_completo", $estadopago) ; 
-                $monto_debito = $monto_debito ->where("ventas.pago_completo", $estadopago) ;
-                $monto_completas = $monto_completas ->where("ventas.pago_completo", $estadopago) ;
-                $monto_credito = $monto_credito  ->where("ventas.pago_completo", $estadopago) ;
+            if ($pagina) {
+                $cantidad_completas =  $cantidad_completas->where("ventas.pago_completo", $estadopago);
+                $monto_debito = $monto_debito->where("ventas.pago_completo", $estadopago);
+                $monto_efectivo = $monto_efectivo->where("ventas.pago_completo", $estadopago);
+                $monto_efectivo_pedidosya = $monto_efectivo_pedidosya->where("ventas.pago_completo", $estadopago);
+                $monto_credito_pedidosya = $monto_credito_pedidosya->where("ventas.pago_completo", $estadopago);
+                $monto_completas = $monto_completas->where("ventas.pago_completo", $estadopago);
+                // $monto_credito = $monto_credito->where("ventas.pago_completo", $estadopago);
             }
         }
         if ($empleado) {
@@ -484,35 +588,43 @@ class VentasController extends Controller
             $ventas = $ventas->where("ventas.user_id", $empleado);
         }
 
-        $ventas = $ventas->orderBy("ventas.id", 'desc')  ->paginate(15);
+        $ventas = $ventas->orderBy("ventas.id", 'desc')->paginate(15);
         $render = true;
 
         $data = array();
-        if($pagina){
+        if ($pagina) {
             $cantidad_completas =  $cantidad_completas->first();
-            $monto_completas =  $monto_completas  ->first();
-            $monto_debito = $monto_debito ->first();
-            $monto_credito =   $monto_credito ->first();
-            $monto_egreso = $monto_egreso ->first();
+            $monto_completas =  $monto_completas->first();
+            $monto_debito = $monto_debito->first();
+            $monto_efectivo = $monto_efectivo->first();
+            $monto_efectivo_pedidosya = $monto_efectivo_pedidosya->first();
+            $monto_credito_pedidosya = $monto_credito_pedidosya->first();
+            // $monto_credito =   $monto_credito->first();
+            $monto_egreso = $monto_egreso->first();
 
             $cantidad_completas =  $cantidad_completas->cantidad;
             $monto_completas = number_format($monto_completas->cantidad, 2, '.', '');
             $monto_debito = number_format($monto_debito->cantidad, 2, '.', '');
-            $monto_credito = number_format($monto_credito->cantidad, 2, '.', '');
+            $monto_efectivo = number_format($monto_efectivo->cantidad, 2, '.', '');
+            $monto_efectivo_pedidosya = number_format($monto_efectivo_pedidosya->cantidad, 2, '.', '');
+            $monto_credito_pedidosya = number_format($monto_credito_pedidosya->cantidad, 2, '.', '');
+            // $monto_credito = number_format($monto_credito->cantidad, 2, '.', '');
             $monto_egreso = number_format($monto_egreso->cantidad, 2, '.', '');
-            $total =    number_format(($monto_completas - $monto_egreso),2,'.','');
-    
+            $total =    number_format(($monto_completas - $monto_egreso), 2, '.', '');
+
             $data["cantidad_completas"] =  $cantidad_completas;
             $data["monto_completas"] =  $monto_completas;
             $data["monto_debito"] =  $monto_debito;
-            $data["monto_credito"] =  $monto_credito;
+            $data["monto_efectivo"] =  $monto_efectivo;
+            $data["monto_efectivo_pedidosya"] =  $monto_efectivo_pedidosya;
+            $data["monto_credito_pedidosya"] =  $monto_credito_pedidosya;
+            // $data["monto_credito"] =  $monto_credito;
             $data["monto_egreso"] =  $monto_egreso;
             $data["total"] =  $total;
-    
         }
 
 
-        return response()->json([view("ventas.listado_data_filtro", compact("ventas", "render"))->render(),$data]);
+        return response()->json([view("ventas.listado_data_filtro", compact("ventas", "render"))->render(), $data]);
     }
 
 
@@ -539,18 +651,29 @@ class VentasController extends Controller
         // 4	"Cancelado"
         $tipo_envios  = VentasEstadoEnvio::select("id", "nombre")->where("id", 2)->orderby("id", "asc")->pluck("nombre", "id");
         $tipo_pagos =  TipoPago::select("tipo_pago", "id")->where("eliminado", false)->pluck("tipo_pago", "id");
-        $articulos = Articulo::select("id", 'articulo',"nombre_corto", 'stock', 'precio_venta',"categoria_id")
+        $articulos = Articulo::select("id", 'articulo', "nombre_corto", 'stock', 'precio_venta', "categoria_id")
             // ->where("habilitado", true)
-            ->where("eliminado", false) ->orderby("id","asc")->get();
-        
+            ->where("eliminado", false)->orderby("id", "asc")->get();
 
-        return view("ventas.nuevo", compact( "articulos",   "tipo_envios", "tipo_pagos"));
+
+        return view("ventas.nuevo", compact("articulos",   "tipo_envios", "tipo_pagos"));
     }
 
 
 
     public function edit($id)
     {
+
+        $validator = \Validator::make(["id"=>$id], [
+            'id' => 'required|numeric',
+        ],[
+            "id.required" => "El Nro de Venta no existe",
+            "id.numeric" => "El Nro de Venta no existe",
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()->route("ventas");
+        }
 
         // $data = [
         //     'titulo' => 'Styde.net'
@@ -568,47 +691,47 @@ class VentasController extends Controller
         if (!$venta) {
             return redirect()->route("ventas");
         }
-        
+
 
         // $bebidas = Articulo::select("id", 'articulo', 'stock', 'precio_venta')
         //     ->where("habilitado", true)
         //     ->where("categoria_id", 1)
         //     ->where("eliminado", false)->get()->toArray();
 
-            
+
         // $empanadas = Articulo::select("articulos.id", 'articulos.articulo', 'articulos.stock', 'articulos.precio_venta' )
         //     ->where("articulos.categoria_id", 2)
         //     ->where("articulos.eliminado", false)->get()->toArray();
 
-        $articulos = Articulo::select("articulos.id", 'articulos.articulo', 'articulos.stock', 'articulos.precio_venta',"categoria_id" )
-            ->where("articulos.eliminado", false)->orderby("id","asc")->get()->toArray();
-            
+        $articulos = Articulo::select("articulos.id", 'articulos.articulo', 'articulos.stock', 'articulos.precio_venta', "categoria_id")
+            ->where("articulos.eliminado", false)->orderby("id", "asc")->get()->toArray();
+
         // 1	"Ordenado"
         // 2	"En preparacion"
         // 3	"Enviado"
         // 4	"Cancelado"
         // 5    "Entregado"
-        $tipo_envios  = VentasEstadoEnvio::select("id", "nombre")->where("eliminado",false)->whereIn("id", [3, 4, 5])->orderby("id", "asc")->pluck("nombre", "id");
+        $tipo_envios  = VentasEstadoEnvio::select("id", "nombre")->where("eliminado", false)->whereIn("id", [3, 4, 5])->orderby("id", "asc")->pluck("nombre", "id");
         $tipo_pagos =  TipoPago::select("tipo_pago", "id")->where("eliminado", false)->pluck("tipo_pago", "id");
 
         // if (auth()->user()->es_empleado == false) {
         //     $empleados = User::select("id", "nombre")->where("eliminado", false)->where("es_empleado", true)->pluck("nombre", "id");
         // }
 
-        $detalles = VentaDetalleArticulo::select("cantidad","articulo_id as id"  )
-        ->where("venta_id", $id)
-        ->where("eliminado", false)->get()->toarray();;
+        $detalles = VentaDetalleArticulo::select("cantidad", "articulo_id as id")
+            ->where("venta_id", $id)
+            ->where("eliminado", false)->get()->toarray();;
 
 
         foreach ($detalles as $key => $value) {
-            foreach ($articulos as $k => $v ) {
-                if($value["id"] == $v["id"]){
+            foreach ($articulos as $k => $v) {
+                if ($value["id"] == $v["id"]) {
                     $articulos[$k]["cantidad"] = $value["cantidad"];
                 }
             }
         }
-       
-        $pagos = VentaDetallePago::select("ventas_detalle_pago.id","ventas_detalle_pago.monto", "tipopago.tipo_pago" )
+
+        $pagos = VentaDetallePago::select("ventas_detalle_pago.id", "ventas_detalle_pago.monto", "tipopago.tipo_pago")
             ->leftjoin("tipopago", "tipopago.id", "=", "ventas_detalle_pago.tipopago_id")
             ->where("tipopago.eliminado", false)
             ->where("ventas_detalle_pago.eliminado", false)
@@ -624,6 +747,20 @@ class VentasController extends Controller
     public function show(Request $request, $id)
     {
 
+        $validator = \Validator::make( ["id"=>$id], [
+            'id' => 'required|numeric',
+        ],[
+            "id.required" => "El Nro de Venta no existe",
+            "id.numeric" => "El Nro de Venta no existe",
+        ]);
+
+       
+        if( $request->ajax() && $validator->fails()){
+            return response()->json(["status"=>"error",'message' => $validator->errors()->all()]);
+        }
+        if ($validator->fails()) {
+            return redirect()->route("ventas");
+        }
         // $data = [
         //     'titulo' => 'Styde.net'
         // ];
@@ -636,7 +773,7 @@ class VentasController extends Controller
             ->leftjoin("ventas_estadoenvio", "ventas_estadoenvio.id", "=", "ventas.tipoenvio_id")
             ->leftjoin("users", "users.id", "=", "ventas.user_id")
             ->where("ventas.id", $id)
-            ->where("ventas.eliminado",false)
+            ->where("ventas.eliminado", false)
             ->first();
         if (!$venta && $request->ajax()) {
             return response()->json(["status" => "success", "message" => "Venta no existe!"]);
@@ -665,60 +802,82 @@ class VentasController extends Controller
     public function update(Request $request, $id)
     {
 
-        $venta = Ventas::select("id")->where("id", $id)->where("eliminado",false)->first();
-        if (!$venta) {
-            return response()->json(["status" => "error", "message" => "Venta no existe!"]);
-        }
+
         $validator = \Validator::make($request->all(), [
-            'cliente' => 'nullable|string',
+            'cliente' => 'nullable|string|max:255',
             'estadopedido_id' => 'nullable|numeric',
             // 'vendedor' => 'nullable|numeric',
             'fecha' => 'nullable|date',
             'articulos' => 'nullable|array',
-            'descuento' => 'nullable|numeric',
-            'pagos_id' => 'nullable|numeric',
-            'pagos_monto' => 'nullable|numeric',
-            'comentario' => 'nullable|string|max:2000',
+            'descuento' => 'nullable|numeric|max:999999.99',
+            'pagos_id' => 'required|numeric',
+            'pagos_monto' => 'required|numeric|max:999999.99',
+            'comentario' => 'nullable|string|max:1000',
             'ticket' => 'nullable|boolean',
+        ],[
+            "cliente.max" => "Cliente ingresado no es válido",
+            "fecha.date" => "La fecha ingresada no es válida",
+            "descuento.max" => "El Descuento ingresado no es válido",
+            "comentario.max" => "El comentario ingresado superó el máximo de caracteres permitido",
+            "pagos_id.required" => "Debe seleccionar un Método de Pago",
+            "pagos_monto.required" => "Debe ingresar un Monto",
+            "pagos_monto.max" => "Debe ingresar un Monto"
         ]);
 
         if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()->all()]);
+            return response()->json(["status"=>"error",'message' => $validator->errors()->all()]);
         }
-        
+
+
+        $validator = \Validator::make(["id"=>$id], [
+            "id" => "required|numeric",
+        ],[
+            "id.required" => "El Nro de Venta no existe",
+            "id.numeric" => "El Nro de Venta no existe",
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(["status"=>"error",'message' => $validator->errors()->all()]);
+        }
+
+        $venta = Ventas::select("id")->where("id", $id)->where("eliminado", false)->first();
+        if (!$venta) {
+            return response()->json(["status" => "error", "message" => "Venta no existe!"]);
+        }
+
         $user_id = auth()->user()->id;
         $dataEvento = array();
         $cliente =  request()->cliente  ? trim($request->cliente) : null;
-        $tipoenvio_id =  ( (int)request()->estadopedido_id > 0) ? (int)$request->estadopedido_id : null; // 1-ordenado, 2-enpreparacion, 3-enviado, 4-cancelado
+        $tipoenvio_id =  ((int)request()->estadopedido_id > 0) ? (int)$request->estadopedido_id : null; // 1-ordenado, 2-enpreparacion, 3-enviado, 4-cancelado
         $vendedor_id =  request()->vendedor  ? $request->vendedor : null;
         $fecha =  request()->fecha  ? $request->fecha : date("Y-m-d");
         $articulos = request()->articulos ? request()->articulos : null;
         $descuento = request()->descuento ? request()->descuento : 0;
-        
-        $pagos_id =  (int)request()->pagos_id >= 1? (int)request()->pagos_id: null;
+
+        $pagos_id =  (int)request()->pagos_id >= 1 ? (int)request()->pagos_id : null;
         $pagos_monto = ((float)trim(request()->pagos_monto) > 0) ? (float)request()->pagos_monto : null;
 
         $comentario = request()->comentario ? request()->comentario : null;
-        $ticket = (boolean)request()->ticket == true ? true : false;
- 
-         
-        if($cliente){
+        $ticket = (bool)request()->ticket == true ? true : false;
+
+
+        if ($cliente) {
             // $cliente =  Purifier::clean($cliente);
             // $cliente = str_replace("&lt","",$cliente);
             // $cliente = str_replace("?","",$cliente);
             // $cliente = str_replace("\\","",$cliente);
-            $cliente = str_replace("--","",$cliente);
-            $cliente = str_replace("'","",$cliente);
+            $cliente = str_replace("--", "", $cliente);
+            $cliente = str_replace("'", "", $cliente);
             $cliente = trim($cliente);
         }
-         
-        if($comentario){
+
+        if ($comentario) {
             // $comentario =  Purifier::clean($comentario);
             // $comentario = str_replace("&lt","",$comentario);
             // $comentario = str_replace("?","",$comentario);
             // $comentario = str_replace("\\","",$comentario);
-            $comentario = str_replace("--","",$comentario);
-            $comentario = str_replace("'","",$comentario);
+            $comentario = str_replace("--", "", $comentario);
+            $comentario = str_replace("'", "", $comentario);
             $comentario = trim($comentario);
         }
 
@@ -734,7 +893,7 @@ class VentasController extends Controller
 
         $data["cliente"] = $cliente;
         $data["descuento_importe"]  = $descuento;
- 
+
         // if ($vendedor_id) {
         //     $vendedor = User::select("nombre")->where("id", $vendedor_id)->where("es_empleado", true)->where("eliminado", false)->first();
         //     if (!$vendedor) {
@@ -755,21 +914,26 @@ class VentasController extends Controller
         if ($pagos_id > 0) {
             $data["tipopago_id"] = $pagos_id;
         }
-        
-        $restaurar_stock=true;
-       
+
+        $restaurar_stock = true;
+
         $t1_hora_desde = "07:30";
         $t1_hora_hasta = "16:00";
 
         $t2_hora_desde = "16:01";
         $t2_hora_hasta = "23:59";
 
+        // actualizar caja, tipopago_id 1 y 8 (Efectivo y Efectivo PedidosYa) 
+        $montoEfectivo = VentaDetallePago::select(\DB::raw("sum(monto) as monto"))->where("venta_id", $id) ->where("eliminado",false)->whereIn("tipopago_id", [1,8] )->first();
+        if( isset($montoEfectivo["monto"]) && $montoEfectivo["monto"] !==null ){
+            CajasDetalle::where("caja_abierta", true)->where(\DB::raw("to_char(inicio_fecha,'yyyy-mm-dd')") , $fecha)->decrement("monto_estimado", $montoEfectivo["monto"]);
+        }
 
         // 'id','fecha','punto_venta','codigo','cliente_id','user_id','monto','descuento_porcentaje',
         // 'descuento_importe','cae','comentario','eliminado','creator_id',"caja_id",'created_at','updated_at'
-        $total = Ventas::select("total_recibido", "descuento_importe", "tipoenvio_id")->where("id", $id)->where("eliminado", false)->first();
+        $total = Ventas::select("total_recibido", "descuento_importe", "tipoenvio_id","tipopago_id")->where("id", $id)->where("eliminado", false)->first();
         if ($total) {
-            if($total->tipoenvio_id == 4) $restaurar_stock =  false;
+            if ($total->tipoenvio_id == 4) $restaurar_stock =  false;
             // decrementar de reportes 
             $mes_fecha = date("m", strtotime($fecha));
             $anio_fecha = date("Y", strtotime($fecha));
@@ -777,55 +941,56 @@ class VentasController extends Controller
 
             Reportes::where("mes", $mes_fecha)->where("anio", $anio_fecha)->decrement("monto_ventas", $monto);
             Reportes::where("mes", $mes_fecha)->where("anio", $anio_fecha)->decrement("cantidad_ventas", 1);
+
         }
 
         $venta = Ventas::where("id", $id)->where("eliminado", false)->update($data);
         $venta_id = $id;
 
-        if($tipoenvio_id==4  && $restaurar_stock ){
+        if ($tipoenvio_id == 4  && $restaurar_stock) {
             // 4- cancelar - entonces restaurar stock
-            $venta_detalles = VentaDetalleArticulo::select("cantidad", "articulo_id")->where("venta_id", $id)->where("eliminado",false)->get();
+            $venta_detalles = VentaDetalleArticulo::select("cantidad", "articulo_id")->where("venta_id", $id)->where("eliminado", false)->get();
             if ($venta_detalles) {
                 foreach ($venta_detalles as $vd) {
                     $cant_art = (int)$vd["cantidad"];
-                    Articulo::where("id", $vd["articulo_id"])->where("eliminado",false)->increment("stock", $cant_art);
+                    Articulo::where("id", $vd["articulo_id"])->where("eliminado", false)->increment("stock", $cant_art);
                 }
             }
         }
 
         $total = 0;
-        $detalle ="";
-        if ($articulos!==null && $tipoenvio_id!==4) {
-            $venta_detalles = VentaDetalleArticulo::select("cantidad", "articulo_id")->where("venta_id", $id)->where("eliminado",false)->get();
+        $detalle = "";
+        if ($articulos !== null && $tipoenvio_id !== 4) {
+            $venta_detalles = VentaDetalleArticulo::select("cantidad", "articulo_id")->where("venta_id", $id)->where("eliminado", false)->get();
             if ($venta_detalles) {
                 foreach ($venta_detalles as $vd) {
                     $cant_art = (int)$vd["cantidad"];
-                    Articulo::where("id", $vd["articulo_id"])->where("eliminado",false)->increment("stock", $cant_art);
+                    Articulo::where("id", $vd["articulo_id"])->where("eliminado", false)->increment("stock", $cant_art);
 
                     // BEGIN ESTADISTICA: CANTIDAD ARTICULOS VENDIDOS POR TURNOS DEL DIA 
                     $dia = date("d");
                     $mes = date("m");
                     $anio = date("Y");
-                    if(date("H:i") >= $t1_hora_desde && date("H:i")<= $t1_hora_hasta ){
-                        ArticuloPorDia::firstOrCreate(["articulo_id"=> $vd["articulo_id"],"dia"=>$dia,"mes" => $mes, "anio" => $anio, "t1" => true]);
-                        ArticuloPorDia::where("dia",$dia)->where("mes",$mes )->where("anio",  $anio)->where("t1",true)->where("articulo_id",$vd["articulo_id"])->where("cantidad",'>',0)->decrement("cantidad", $cant_art);
+                    if (date("H:i") >= $t1_hora_desde && date("H:i") <= $t1_hora_hasta) {
+                        ArticuloPorDia::firstOrCreate(["articulo_id" => $vd["articulo_id"], "dia" => $dia, "mes" => $mes, "anio" => $anio, "t1" => true]);
+                        ArticuloPorDia::where("dia", $dia)->where("mes", $mes)->where("anio",  $anio)->where("t1", true)->where("articulo_id", $vd["articulo_id"])->where("cantidad", '>', 0)->decrement("cantidad", $cant_art);
                     }
 
-                    if(date("H:i") >= $t2_hora_desde && date("H:i")<= $t2_hora_hasta ){
-                        ArticuloPorDia::firstOrCreate(["articulo_id"=> $vd["articulo_id"],"dia"=>$dia,"mes" => $mes, "anio" => $anio, "t2" => true]);
-                        ArticuloPorDia::where("dia",$dia)->where("mes",$mes )->where("anio",  $anio)->where("t2",true)->where("articulo_id",$vd["articulo_id"])->where("cantidad",">",0)->decrement("cantidad", $cant_art);
+                    if (date("H:i") >= $t2_hora_desde && date("H:i") <= $t2_hora_hasta) {
+                        ArticuloPorDia::firstOrCreate(["articulo_id" => $vd["articulo_id"], "dia" => $dia, "mes" => $mes, "anio" => $anio, "t2" => true]);
+                        ArticuloPorDia::where("dia", $dia)->where("mes", $mes)->where("anio",  $anio)->where("t2", true)->where("articulo_id", $vd["articulo_id"])->where("cantidad", ">", 0)->decrement("cantidad", $cant_art);
                     }
                     // END ESTADISTICA: CANTIDAD ARTICULOS VENDIDOS POR TURNOS DEL DIA 
                 }
-                VentaDetalleArticulo::where("venta_id", $venta_id)->update(["eliminado"=>true]);
+                VentaDetalleArticulo::where("venta_id", $venta_id)->update(["eliminado" => true]);
             }
             foreach ($articulos as $item) {
                 $articulo_id  =  (isset($item["articulo_id"]) && $item["articulo_id"] !== null) ? trim($item["articulo_id"]) : null;
-                $cantidad = (isset($item["articulo_cantidad"]) && $item["articulo_cantidad"] !== null) ? trim( $item["articulo_cantidad"]) : 1;
+                $cantidad = (isset($item["articulo_cantidad"]) && $item["articulo_cantidad"] !== null) ? trim($item["articulo_cantidad"]) : 1;
                 // $descuento = (isset($item["articulo_descuento"]) && $item["articulo_descuento"] !== null) ?  $item["articulo_descuento"] : null;
 
                 if ($articulo_id == null) continue;
-                if($cantidad <= 0) continue;
+                if ($cantidad <= 0) continue;
                 // 'id', 'articulo', 'codigo', 'codigo_barras', 'stock', 'stock_minimo',  'precio_compra','precio_venta','precio_neto_venta',
                 // 'marca_id','categoria_id', 'subcategoria_id', 'tasa_iva_id', 'precio_id', 'creator_id',
                 // 'habilitado', 'eliminado', 'created_at', 'updated_at'
@@ -856,26 +1021,25 @@ class VentasController extends Controller
                 $dia = date("d");
                 $mes = date("m");
                 $anio = date("Y");
-                if(date("H:i") >= $t1_hora_desde && date("H:i")<= $t1_hora_hasta ){
-                    ArticuloPorDia::firstOrCreate(["articulo_id"=> $articulo_id,"dia"=>$dia,"mes" => $mes, "anio" => $anio, "t1" => true]);
-                    ArticuloPorDia::where("dia",$dia)->where("mes",$mes )->where("anio",  $anio)->where("t1",true)->where("articulo_id",$articulo_id)->increment("cantidad", $cantidad);
+                if (date("H:i") >= $t1_hora_desde && date("H:i") <= $t1_hora_hasta) {
+                    ArticuloPorDia::firstOrCreate(["articulo_id" => $articulo_id, "dia" => $dia, "mes" => $mes, "anio" => $anio, "t1" => true]);
+                    ArticuloPorDia::where("dia", $dia)->where("mes", $mes)->where("anio",  $anio)->where("t1", true)->where("articulo_id", $articulo_id)->increment("cantidad", $cantidad);
                 }
 
-                if(date("H:i") >= $t2_hora_desde && date("H:i")<= $t2_hora_hasta ){
-                    ArticuloPorDia::firstOrCreate(["articulo_id"=> $articulo_id,"dia"=>$dia,"mes" => $mes, "anio" => $anio, "t2" => true]);
-                    ArticuloPorDia::where("dia",$dia)->where("mes",$mes )->where("anio",  $anio)->where("t2",true)->where("articulo_id",$articulo_id)->increment("cantidad", $cantidad);
+                if (date("H:i") >= $t2_hora_desde && date("H:i") <= $t2_hora_hasta) {
+                    ArticuloPorDia::firstOrCreate(["articulo_id" => $articulo_id, "dia" => $dia, "mes" => $mes, "anio" => $anio, "t2" => true]);
+                    ArticuloPorDia::where("dia", $dia)->where("mes", $mes)->where("anio",  $anio)->where("t2", true)->where("articulo_id", $articulo_id)->increment("cantidad", $cantidad);
                 }
                 // END ESTADISTICA: CANTIDAD ARTICULOS VENDIDOS POR TURNOS DEL DIA 
 
 
-                
                 $detalle .= "$cantidad $nombre_articulo,,";
                 // decrementar  stock 
-                if ($venta_detalle && $articulo["stock"] > 0) {
-                    $articulo =  Articulo::where("id", $articulo_id)
+                // if ($venta_detalle && $articulo["stock"] > 0) {
+                $articulo =  Articulo::where("id", $articulo_id)
                         ->where("eliminado", false)
                         ->decrement("stock", $cantidad);
-                }
+                // }
                 // $errors[] = array(["message" => "Articulo " . $item['articulo_id'] . " stock insuficiente!"]);
                 $total =  $total + $subtotal;
             } // end foreach
@@ -883,58 +1047,45 @@ class VentasController extends Controller
             // if (isset($data["descuento_porcentaje"]) && !empty($data["descuento_porcentaje"])) {
             //     $total = $total - ($total * ($data["descuento_porcentaje"] / 100));
             // }
-           $detalle .=",,,";
-           $detalle = str_replace(",,,,,","",$detalle);
+            $detalle .= ",,,";
+            $detalle = str_replace(",,,,,", "", $detalle);
             Ventas::where("id", $venta_id)
                 ->where("eliminado", false)
-                ->update(["monto" => $total,"detalle"=>$detalle]);
+                ->update(["monto" => $total, "detalle" => $detalle]);
+
+            
         }
 
-       
 
-        if($tipoenvio_id!==4){
+
+        if ($tipoenvio_id !== 4) {
             // 4 - cancelado
             $total_apagar = $total;
             if ($descuento) {
                 $total_apagar = $total - $descuento;
             }
-    
+
             $mes_fecha = date("m", strtotime($fecha));
             $anio_fecha = date("Y", strtotime($fecha));
             Reportes::where('eliminado', false)->where("mes", $mes_fecha)->where("anio", $anio_fecha)->increment("monto_ventas", $total_apagar);
             Reportes::where('eliminado', false)->where("mes", $mes_fecha)->where("anio", $anio_fecha)->increment("cantidad_ventas", 1);
 
+            $dataPuher = array();
+            $dataPuher["metodo"] = "update";
+            $dataPuher["estado"] = "refrescar";
+            $dataPuher["venta_id"] =  $venta_id;
+            // generar evento de pedido
+            VentaUpdatePusherJob::dispatch($dataPuher); 
+
         }
- 
-        if($tipoenvio_id ==  4 || $tipoenvio_id == "4" &&   $fecha == date("Y-m-d")  ){
+
+        if ($tipoenvio_id ==  4 || $tipoenvio_id == "4" &&   $fecha == date("Y-m-d")) {
             $dataPuher = array();
             $dataPuher["metodo"] = "update";
             $dataPuher["estado"] = "eliminar";
             $dataPuher["venta_id"] =  $venta_id;
             // generar evento de pedido
-            try {
-                $options = array(
-                    'cluster' => env("PUSHER_APP_CLUSTER"),
-                    'encrypted' => true
-                );
-                $pusher = new Pusher(
-                    env('PUSHER_APP_KEY'),
-                    env('PUSHER_APP_SECRET'),
-                    env('PUSHER_APP_ID'),
-                    $options
-                );
-                $pusher->trigger('pedidos-pendientes', 'App\Events\EventoPedidos', $dataPuher );
-                //code...
-            } catch (\Exception $th) {
-                Log::error($th->getMessage());
-            }
-            // end generar evento de pedido
-            // try {
-            //     event(new EventoPedidos( $dataPuher));
-            // } catch (\Exception $th) {
-            //     //throw $th;
-            //     Log::error($th->getMessage());
-            // }
+            VentaUpdatePusherJob::dispatch($dataPuher); 
         }
         $suma = 0;
         if ($pagos_id && $pagos_monto) {
@@ -946,8 +1097,8 @@ class VentasController extends Controller
             ]);
             Ventas::where("id", $venta_id)->where("eliminado", false)->increment("total_recibido", $pagos_monto);
             $suma += $pagos_monto;
-            
-            $vdp = VentaDetallePago::select(\DB::raw("sum(monto) as monto"))->where("venta_id", $venta_id)->first();
+
+            $vdp = VentaDetallePago::select(\DB::raw("sum(monto) as monto"))->where("venta_id", $venta_id)->where("eliminado",false)->first();
             $suma += $vdp->monto;
             if ($suma >= $total) {
                 Ventas::where("id", $venta_id)
@@ -956,8 +1107,8 @@ class VentasController extends Controller
             }
         }
 
-
-
+        // actualizar caja  
+        VentaUpdateCajaJob::dispatch($venta_id, $fecha); // true = incrementar
 
 
         if ($ticket == true) {
@@ -965,7 +1116,7 @@ class VentasController extends Controller
                 "nombre" => "EMPTATODO EMPANADA",
             );
             $venta = Ventas::where("id", $venta_id)->first();
-            $detalles =  VentaDetalleArticulo::where("venta_id", $venta_id)->where("eliminado",false)->get();
+            $detalles =  VentaDetalleArticulo::where("venta_id", $venta_id)->where("eliminado", false)->get();
             $pagos = VentaDetallePago::select("ventas_detalle_pago.monto", "tipopago.tipo_pago")
                 ->leftjoin("tipopago", "tipopago.id", "=", "ventas_detalle_pago.tipopago_id")
                 ->where("tipopago.eliminado", false)
@@ -1003,56 +1154,65 @@ class VentasController extends Controller
         //'id','fecha','punto_venta','codigo','cliente_id','user_id','monto','descuento_porcentaje',
         // 'descuento_importe','eliminado','creator_id','created_at','updated_at'
         $validator = \Validator::make($request->all(), [
-            'cliente' => 'nullable|string',
+            'cliente' => 'nullable|string|max:255',
             'envio' => 'nullable|numeric',
             // 'vendedor' => 'nullable|numeric',
             'fecha' => 'nullable|date',
             'articulos' => 'required|array',
             'descuento' => 'nullable|numeric',
-            'pagos_id' => 'nullable|numeric',
-            'pagos_monto' => 'nullable|numeric',
-            'comentario' => 'nullable|string|max:2000',
+            'pagos_id' => 'required|numeric',
+            'pagos_monto' => 'required|numeric|min:0|max:999999.99',
+            'comentario' => 'nullable|string|max:1000',
             // 'factura' => 'nullable|string',
             'ticket' => 'nullable|boolean',
+        ],[
+            "cliente.max" => "El Cliente ingresado no es válido",
+            "fecha.date" => "La Fecha ingresada no es válida",
+            "comentario.max" => "El Comentario ingresado no es válido",
+            "pagos_id.required" => "Ingresa un método de Pago",
+            "pagos_id.numeric" => "Ingresa un método de Pago",
+            "pagos_monto.required" => "Ingresa un Monto",
+            "pagos_monto.min" => "Ingresa un Monto",
+            "pagos_monto.numeric" => "Ingresa un Monto válido",
+            "pagos_monto.max" => "Ingresa un Monto válido",
         ]);
 
         if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()->all()]);
+            return response()->json([ "status"=> "error",'message' => $validator->errors()->all()]);
         }
         $user_id = auth()->user()->id;
 
-        $dataEvento = array(); // array para pasarle al evento
         $cliente =  request()->cliente  ? trim($request->cliente) : null;
         $tipoenvio_id =  (request()->envio > 0) ? $request->envio : 2; // 1-ordenado, 2-enpreparacion, 3-enviado, 4-cancelado
         // $vendedor_id =  request()->vendedor  ? $request->vendedor : null;
         $fecha =  request()->fecha  ? $request->fecha : date("Y-m-d");
         $articulos = request()->articulos ? request()->articulos : null;
-        $descuento = request()->descuento !==null? request()->descuento : 0;
-        $pagos_id =  (int)request()->pagos_id >= 1? (int)request()->pagos_id: null;
+        $descuento = request()->descuento !== null ? request()->descuento : 0;
+        $pagos_id =  (int)request()->pagos_id >= 1 ? (int)request()->pagos_id : null;
         $pagos_monto = ((float)trim(request()->pagos_monto) > 0) ? (float)request()->pagos_monto : null;
         $comentario = request()->comentario ? request()->comentario : null;
         // $factura = (request()->factura === 'true') ? true : false;
-        $ticket = (boolean) request()->ticket == true ?(boolean) request()->ticket: false;
+        $ticket = (bool) request()->ticket == true ? (bool) request()->ticket : false;
         // $pagos metodopago_id, monto
         // return response()->json(["status" => "success","art"=>$arr, "message" => "Venta creado correctamente!"]);
-        
-        if($cliente){
+
+        if ($cliente) {
             // $cliente =  Purifier::clean($cliente);
             // $cliente = str_replace("&lt","",$cliente);
             // $cliente = str_replace("?","",$cliente);
             // $cliente = str_replace("\\","",$cliente);
-            $cliente = str_replace("--","",$cliente);
-            $cliente = str_replace("'","",$cliente);
+            $cliente = str_replace("--", "", $cliente);
+            $cliente = str_replace("'", "", $cliente);
             $cliente = trim($cliente);
         }
-         
-        if($comentario){
+
+        if ($comentario) {
             // $comentario =  Purifier::clean($comentario);
             // $comentario = str_replace("&lt","",$comentario);
             // $comentario = str_replace("?","",$comentario);
             // $comentario = str_replace("\\","",$comentario);
-            $comentario = str_replace("--","",$comentario);
-            $comentario = str_replace("'","",$comentario);
+            $comentario = str_replace("--", "", $comentario);
+            $comentario = str_replace("'", "", $comentario);
             $comentario = trim($comentario);
         }
 
@@ -1063,7 +1223,7 @@ class VentasController extends Controller
         $t2_hora_desde = "16:01";
         $t2_hora_hasta = "23:59";
         $campana = false;
-        
+
 
         if ($articulos) {
             $monto = null;
@@ -1076,37 +1236,18 @@ class VentasController extends Controller
         $data["cliente"] = $cliente;
         $data["tipoenvio_id"] =  3;  // enviado
 
-        if($fecha == date("Y-m-d")){
+        if ($fecha == date("Y-m-d")) {
             $data["tipoenvio_id"] =  2;  // en preparacion
-
         }
 
         $data["descuento_importe"]  = 0;
+        $dataEvento = array(); // array para pasarle al evento
         $dataEvento["metodo"] = "store";
         $dataEvento["estado"] = "agregar";
         $dataEvento["cliente"] = $cliente;
-        // if ($cliente) {
-        //     $cliente = Cliente::select("nombre")->where("id", $cliente_id)->where("id", "<>", "1")->first();
-        //     if (!$cliente) {
-        //         return response()->json(["status" => "error", "message" => "Cliente no existe!"]);
-        //     }
-        //     $data["cliente_id"] = $cliente_id;
-        // }
-
-        // if ($vendedor_id) {
-        //     $vendedor = User::select("nombre")->where("id", $vendedor_id)->where("es_empleado", true)->where("eliminado", false)->first();
-        //     if (!$vendedor) {
-        //         return response()->json(["status" => "error", "message" => "Vendedor no existe!"]);
-        //     }
-        //     $data["user_id"] = $vendedor_id;
-        // }
-        // if ($vendedor_id == null && auth()->user()->es_empleado == true) {
-        //     $vendedor_id = auth()->user()->id;
-        // }
 
         if ($descuento) {
-            $data["descuento_importe"] = $descuento; 
- 
+            $data["descuento_importe"] = $descuento;
         }
         if ($comentario) {
             $data["comentario"] = $comentario;
@@ -1142,8 +1283,8 @@ class VentasController extends Controller
                 // $descuento = (isset($item["articulo_descuento"]) && $item["articulo_descuento"] !== null) ?  $item["articulo_descuento"] : null;
 
                 if ($articulo_id == null) continue;
-                if($cantidad <=0) continue;
-                
+                if ($cantidad <= 0) continue;
+
                 // 'id', 'articulo', 'codigo', 'codigo_barras', 'stock', 'stock_minimo',  'precio_compra','precio_venta','precio_neto_venta',
                 // 'marca_id','categoria_id', 'subcategoria_id', 'tasa_iva_id', 'precio_id', 'creator_id',
                 // 'habilitado', 'eliminado', 'created_at', 'updated_at'
@@ -1159,7 +1300,7 @@ class VentasController extends Controller
                 $stock_total = $stock - $cantidad;
                 $articulo_nombre = $articulo->articulo;
 
-                $detalle .="$cantidad $articulo_nombre,,";
+                $detalle .= "$cantidad $articulo_nombre,,";
                 $precio_venta = (float)$articulo["precio_venta"];
                 $subtotal =  $cantidad * $precio_venta;
                 // if ($descuento) {
@@ -1183,14 +1324,14 @@ class VentasController extends Controller
                 $dia = date("d");
                 $mes = date("m");
                 $anio = date("Y");
-                if(date("H:i") >= $t1_hora_desde && date("H:i")<= $t1_hora_hasta ){
-                    ArticuloPorDia::firstOrCreate(["articulo_id"=> $articulo_id,"dia"=>$dia,"mes" => $mes, "anio" => $anio, "t1" => true]);
-                    ArticuloPorDia::where("dia",$dia)->where("mes",$mes )->where("anio",  $anio)->where("t1",true)->where("articulo_id",$articulo_id)->increment("cantidad", $cantidad);
+                if (date("H:i") >= $t1_hora_desde && date("H:i") <= $t1_hora_hasta) {
+                    ArticuloPorDia::firstOrCreate(["articulo_id" => $articulo_id, "dia" => $dia, "mes" => $mes, "anio" => $anio, "t1" => true]);
+                    ArticuloPorDia::where("dia", $dia)->where("mes", $mes)->where("anio",  $anio)->where("t1", true)->where("articulo_id", $articulo_id)->increment("cantidad", $cantidad);
                 }
 
-                if(date("H:i") >= $t2_hora_desde && date("H:i")<= $t2_hora_hasta ){
-                    ArticuloPorDia::firstOrCreate(["articulo_id"=> $articulo_id,"dia"=>$dia,"mes" => $mes, "anio" => $anio, "t2" => true]);
-                    ArticuloPorDia::where("dia",$dia)->where("mes",$mes )->where("anio",  $anio)->where("t2",true)->where("articulo_id",$articulo_id)->increment("cantidad", $cantidad);
+                if (date("H:i") >= $t2_hora_desde && date("H:i") <= $t2_hora_hasta) {
+                    ArticuloPorDia::firstOrCreate(["articulo_id" => $articulo_id, "dia" => $dia, "mes" => $mes, "anio" => $anio, "t2" => true]);
+                    ArticuloPorDia::where("dia", $dia)->where("mes", $mes)->where("anio",  $anio)->where("t2", true)->where("articulo_id", $articulo_id)->increment("cantidad", $cantidad);
                 }
                 // END ESTADISTICA: CANTIDAD ARTICULOS VENDIDOS POR TURNOS DEL DIA 
 
@@ -1200,11 +1341,10 @@ class VentasController extends Controller
                 ));
 
                 // decrementar  stock 
-                if ($venta_detalle && $articulo["stock"] > 0) {
-                    $articulo =  Articulo::where("id", $articulo_id)
+                $articulo =  Articulo::where("id", $articulo_id)
                         ->where("eliminado", false)
                         ->decrement("stock", $cantidad);
-                }
+
                 // stock minimo
                 if ($stock_total <= $stock_minimo) {
                     $message = "El articulo " . trim($articulo_nombre) . " se esta quedando sin stock.!";
@@ -1224,30 +1364,27 @@ class VentasController extends Controller
             // if (isset($data["descuento_porcentaje"]) && !empty($data["descuento_porcentaje"])) {
             //     $total = $total - ($total * ($data["descuento_porcentaje"] / 100));
             // }
-            $detalle .=",,,";
-            $detalle = str_replace(",,,,,","",$detalle);
-            Ventas::where("id", $venta_id)
-                ->where("eliminado", false)
-                ->update(["monto" => $total,"detalle"=>$detalle]);
-            
+            $detalle .= ",,,";
+            $detalle = str_replace(",,,,,", "", $detalle);
+
+            VentaUpdateDetalleJob::dispatch($venta_id, $total, $detalle);
+           
+
             if (isset($data["descuento_importe"]) && !empty($data["descuento_importe"])) {
                 $total = $total - $data["descuento_importe"];
             }
-          
+
 
             // si caja abierta incrementar monto_estimado
             // $caja_abierta = CajasDetalle::where('caja_abierta', true)->increment("monto_estimado", $total);
             // reportes 
-            $mes_fecha = date("m", strtotime($fecha));
-            $anio_fecha = date("Y", strtotime($fecha));
-            Reportes::firstOrCreate(["mes" => $mes_fecha, "anio" => $anio_fecha, "eliminado" => false]);
-            Reportes::where("mes",$mes_fecha )->where("anio",  $anio_fecha)->increment("monto_ventas", $total);
-            Reportes::where("mes",$mes_fecha )->where("anio",  $anio_fecha)->increment("cantidad_ventas", 1);
+            VentaReportesCantidadMontoJob::dispatch($fecha,$total);
+           
         }
 
         $suma = 0;
 
-        if ($pagos_id && $pagos_monto ) {
+        if ($pagos_id && $pagos_monto) {
             $venta_pago = VentaDetallePago::create([
                 "tipopago_id" => $pagos_id,
                 "monto" => $pagos_monto,
@@ -1256,6 +1393,12 @@ class VentasController extends Controller
             ]);
             Ventas::where("id", $venta_id)->where("eliminado", false)->increment("total_recibido", $pagos_monto);
             $suma += $pagos_monto;
+        }
+
+        // incrementar monto en caja abierta si tipo de pago es efectivo
+        // 1=efectivo, 8=efectivo pedidosya
+        if (in_array($pagos_id, [1, 8])) {
+            CajasDetalle::where("caja_abierta", true)->where(\DB::raw("to_char(inicio_fecha,'yyyy-mm-dd')") , $fecha)->increment("monto_estimado", $pagos_monto);
         }
 
         $vdp = VentaDetallePago::select(\DB::raw("sum(monto) as monto"))->where("venta_id", $venta_id)->first();
@@ -1271,51 +1414,23 @@ class VentasController extends Controller
         // 3	"Enviado"
         // 4	"Cancelado"
         // generar evento de pedido
-        if($fecha == date("Y-m-d")){
-            if (date("H:i") >= $t1_hora_desde && date("H:i") <= $t1_hora_hasta ||  date("H:i")>=$t2_hora_desde && date("H:i")<= $t2_hora_hasta) {
+        if ($fecha == date("Y-m-d")) {
+            if (date("H:i") >= $t1_hora_desde && date("H:i") <= $t1_hora_hasta ||  date("H:i") >= $t2_hora_desde && date("H:i") <= $t2_hora_hasta) {
                 if (in_array($data["tipoenvio_id"], array(1, 2))) {
-                   try {
-                       $options = array(
-                            'cluster' => env("PUSHER_APP_CLUSTER"),
-                            'encrypted' => true
-                        );
-                        $pusher = new Pusher(
-                            env('PUSHER_APP_KEY'),
-                            env('PUSHER_APP_SECRET'),
-                            env('PUSHER_APP_ID'),
-                            $options
-                        );
-                        $pusher->trigger('pedidos-pendientes', 'App\Events\EventoPedidos', $dataEvento);
-                   } catch (\Exception $th) {
-                       Log::error($th);
-                   }
-                    
-                    // $d = array();
-                    // array_push($d,$dataEvento);
-                    // $success = event(new EventoPedidos( $dataEvento));
-                    // try {
-                    //     $d = array();
-                    //     array_push($d,$dataEvento);
-                    //     $d= $dataEvento;
-                    //     // event(new \App\Events\EventoPedidos($d));
-                    //     Event::dispatch(new EventoPedidos($dataEvento));
-                    // } catch (\Exception $th) {
-                    //     //throw $th;
-                    //     Log::error($th);
-                    // }
+                    VentaStorePusherJob::dispatch($dataEvento);
                 }
             }
         }
- 
+
 
         // end generar evento de pedido
 
-        if ($ticket == true) {
+        if ($ticket === true) {
             $empresa = array(
                 "nombre" => "EMPTATODO EMPANADA",
             );
             $venta = Ventas::where("id", $venta_id)->first();
-            $detalles =  VentaDetalleArticulo::where("venta_id", $venta_id)->where("eliminado",false)->get();
+            $detalles =  VentaDetalleArticulo::where("venta_id", $venta_id)->where("eliminado", false)->get();
             $pagos = VentaDetallePago::select("ventas_detalle_pago.monto", "tipopago.tipo_pago")
                 ->leftjoin("tipopago", "tipopago.id", "=", "ventas_detalle_pago.tipopago_id")
                 ->where("tipopago.eliminado", false)
@@ -1356,85 +1471,39 @@ class VentasController extends Controller
     public function destroy(Request $request, $id)
     {
         //
-        $venta_id = $id;
         // $creator_id = auth()->user()->creator_id;
         if (!$request->ajax()) return redirect()->route("home");
 
-        $venta = Ventas::select("fecha", "monto", "created_at")->where("id", $venta_id)->where("eliminado", false)->first();
+        $validator = \Validator::make($request->all(), [
+            'id' => 'nullable|numeric|min:1',
+        ],[
+            "id.numeric" => "El Id de Venta no es válido",
+            "id.min" => "El Id de Venta no es válido",
+        ]);
 
-        $t1_hora_desde = "07:30";
-        $t1_hora_hasta = "16:00";
+        if ($validator->fails()) {
+            return response()->json(["status"=>"error" , 'message' => $validator->errors()->all()]);
+        }  
+        $venta_id = $id;
+        $venta = Ventas::select("id","fecha", "monto", "total_recibido", "tipopago_id","tipoenvio_id", "created_at")->where("id", $venta_id)->where("eliminado", false)->first();
 
-        $t2_hora_desde = "16:01";
-        $t2_hora_hasta = "23:59";
+        // $t1_hora_desde = "07:30";
+        // $t1_hora_hasta = "16:00";
+        // $t2_hora_desde = "16:01";
+        // $t2_hora_hasta = "23:59";
 
         if ($venta) {
-            $venta_detalle = VentaDetalleArticulo::select("cantidad", "articulo_id")->where("venta_id", $venta_id)->where("eliminado",false)->get();
-            if ($venta_detalle) {
-                foreach ($venta_detalle as $vd) {
-                    $cant_art = (int)$vd["cantidad"];
-                    Articulo::where("id", $vd["articulo_id"])->increment("stock", $vd["cantidad"]);
-                    // BEGIN ESTADISTICA: CANTIDAD ARTICULOS VENDIDOS POR TURNOS DEL DIA 
-                    $dia = date("d");
-                    $mes = date("m");
-                    $anio = date("Y");
-                    if(date("H:i") >= $t1_hora_desde && date("H:i")<= $t1_hora_hasta ){
-                        ArticuloPorDia::firstOrCreate(["articulo_id"=> $vd["articulo_id"],"dia"=>$dia,"mes" => $mes, "anio" => $anio, "t1" => true]);
-                        ArticuloPorDia::where("dia",$dia)->where("mes",$mes )->where("anio",  $anio)->where("t1",true)->where("articulo_id",$vd["articulo_id"])->where("cantidad",'>',0)->decrement("cantidad", $cant_art);
-                    }
-
-                    if(date("H:i") >= $t2_hora_desde && date("H:i")<= $t2_hora_hasta ){
-                        ArticuloPorDia::firstOrCreate(["articulo_id"=> $vd["articulo_id"],"dia"=>$dia,"mes" => $mes, "anio" => $anio, "t2" => true]);
-                        ArticuloPorDia::where("dia",$dia)->where("mes",$mes )->where("anio",  $anio)->where("t2",true)->where("articulo_id",$vd["articulo_id"])->where("cantidad",">",0)->decrement("cantidad", $cant_art);
-                    }
-                    // END ESTADISTICA: CANTIDAD ARTICULOS VENDIDOS POR TURNOS DEL DIA 
-                }
-                VentaDetalleArticulo::where("venta_id", $venta_id)->update(["eliminado" => true]);
-            }
-            $mes_fecha = date("m", strtotime($venta['fecha']));
-            $anio_fecha = date("Y", strtotime($venta['fecha']));
-            $monto = $venta['monto'];
-
-            if ($monto !== null) {
-                Reportes::where("mes", $mes_fecha)->where("anio", $anio_fecha)->decrement("monto_ventas", $monto);
-                Reportes::where("mes", $mes_fecha)->where("anio", $anio_fecha)->decrement("cantidad_ventas", 1);
-            }
-
-
-            $d = Ventas::where("id", $venta_id)->where("eliminado", false)->update(["eliminado" => true]);
-
-            if($venta["fecha"] == date("Y-m-d") ){
-                if($d){
-                    $data = array();
-                    $data["metodo"] = "destroy";
-                    $data["estado"] = "eliminar";
-                    $data["venta_id"] =  $venta_id;
-                    $data["created_at"] =  date("Y-m-d H:i",strtotime($venta['created_at']));
-                    
-                    try {
-                        // generar evento de pedido
-                        $options = array(
-                            'cluster' => env("PUSHER_APP_CLUSTER"),
-                            'encrypted' => true
-                        );
-                        $pusher = new Pusher(
-                            env('PUSHER_APP_KEY'),
-                            env('PUSHER_APP_SECRET'),
-                            env('PUSHER_APP_ID'),
-                            $options
-                        );
-                        $pusher->trigger('pedidos-pendientes', 'App\Events\EventoPedidos', $data );
-                    } catch (\Exception $th) {
-                        Log::error($th);
-                    }
-                    // end generar evento de pedido
-                    // try {
-                    //     event(new EventoPedidos( $data));
-                    // } catch (\Exception $th) {
-                    //     //throw $th;
-                    //     Log::error($th);
-                    // }
-                }
+            // eliminar venta desde Jobs
+            VentaDestroyJob::dispatch($venta);
+    
+            // "tipoenvio_id" => 3, // enviado , si es 3 ya fue eliminado del mostrador ( para evitar hacer una peticion extra )
+            if ($venta["fecha"] == date("Y-m-d") && $venta["tipoenvio_id"] !== 3 ) {
+                $data = array();
+                $data["metodo"] = "destroy";
+                $data["estado"] = "eliminar";
+                $data["venta_id"] =  $venta_id;
+                $data["created_at"] =  date("Y-m-d H:i", strtotime($venta['created_at']));
+                VentaDestroyPusherJob::dispatch($data);
             }
 
             return response()->json(["status" => "success", "message" => "Eliminado"]);

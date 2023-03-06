@@ -26,7 +26,13 @@
                         <td data-label="Precio de Venta" class="listado-precioventa text-end" data-precioventa="{{ $item['precio_venta'] }}">
                             {{ $item['precio_venta']?$item['precio_venta']:'-' }}</td>
                         <td data-label="Stock" class="listado-stock text-end" data-stock="{{ $item['stock'] }}">
-                            {{ $item['stock']? $item['stock']:'-' }}</td>
+                            
+                            @if ( $item['stock'] <= 0)
+                                <span class="badge bg-danger"> {{ $item['stock']? $item['stock']:'0' }} </span>
+                            @else
+                                <span > {{ $item['stock']? $item['stock']:'-' }} </span>
+                            @endif
+                        </td>
                         <td data-label="Stock minimo" class="listado-stockminimo text-end" data-stockminimo="{{ $item['stock_minimo'] }}">
                             {{ $item['stock_minimo']?$item['stock_minimo']:'-' }}</td>
                         <td data-label="Categoria" class="listado-categoria" data-categoriaid="{{ $item['categoria_id'] }}">

@@ -14,10 +14,12 @@
 
     <div class="page-heading mx-3 mb-1 ">
         @role("administrador")
-        <div class="mb-3 mt-0">
+        <div class="mb-3 mt-0 boton-abrir-caja">
+            @if (isset($caja_abierta) && count($caja_abierta)== 0)
             <button class="btn btn-outline-success btn-sm mx-1 " data-bs-toggle="modal" data-bs-target="#apertura-caja"> ABRIR </button>
             {{-- <button class="btn btn-outline-success btn-sm mx-1 registro-ingreso" data-bs-toggle="modal" data-bs-target="#ingreso-caja"> REGISTRAR INGRESO </button>
             <button class="btn btn-outline-success btn-sm mx-1 registro-egreso" data-bs-toggle="modal"  data-bs-target="#egreso-caja"> REGISTRAR EGRESO </button> --}}
+            @endif
         </div>
         @endrole
         <div class=" d-flex justify-content-start">
@@ -33,7 +35,7 @@
             <div class="row match-height mx-0">
 
                 <div class="col-12">
-                    <div class="card">
+                    <div class="card shadow">
                         <div class="card-content">
                             <div class="card-body">
                                 <div class="table-responsive ">
@@ -42,7 +44,7 @@
                                             <tr>
                                                 <th>Fecha apertura</th>
                                                 <th>Monto inicio</th>
-                                                {{-- <th>Monto estimado</th> --}}
+                                                <th>Monto acumulado </th>
                                                 {{-- <th>Ingresos</th>
                                                 <th>Egresos</th> --}}
                                                 <th>Accion</th>
@@ -55,16 +57,19 @@
                                                     <tr>
                                                         <td hidden class="caja_id" data-id="{{ $item->id }}">
                                                             {{ $item->id }}</td>
-                                                        <td class="caja_fecha">{{ $item->inicio_fecha }}
-                                                            {{ $item->inicio_hora }}</td>
-                                                        <td class="caja_montoinicio"
-                                                            data-monto="{{ $item->monto_inicio }}">
-                                                            {{ $item->monto_inicio }}</td>
+                                                            <td class="caja_fecha">{{ $item->inicio_fecha }}
+                                                                {{ $item->inicio_hora }}</td>
+                                                                <td class="caja_montoinicio"
+                                                                data-monto="{{ $item->monto_inicio }}">
+                                                                {{ $item->monto_inicio }}</td>
+                                                                <td class="caja_montoacumulado"
+                                                                data-monto="{{ $item->monto_estimado }}">
+                                                                {{ $item->monto_estimado }}</td>
                                                         {{-- <td>{{ $item->monto_estimado }}</td> --}}
                                                         {{-- <td>{{ $item->ingresos }}</td>
                                                         <td>{{ $item->egresos }}</td> --}}
                                                         <td>
-                                                            <button class="btn btn-success btn-sm cerrar-caja">  Cerrar</button>
+                                                            <button class="btn btn-success btn-sm cerrar-caja">  Cerrar </button>
                                                         </td>
                                                     </tr>
                                                 @endforeach
@@ -138,7 +143,7 @@
                 {{-- @role("administrador") --}}
                 {{-- listado --}}
                 <div class="col-12">
-                    <div class="card">
+                    <div class="card shadow">
                         <div class="card-content">
                             <div class="card-header d-flex justify-content-between">
                                 <div class="col">
@@ -251,10 +256,35 @@
                             </div>
                         </div>
 
-                        <div class="form-group">
-                            <label for="">Monto inicio</label>
-                            <input type="text" class="form-control cerrar-monto-inicio" placeholder="" disabled>
+                        <div class="col-12">
+                            <div class="form-group">
+                                <label> Turno de cierre </label>
+                                <select class="form-select cierre-caja-turno" name="" id="">
+                                    <option value="-1" selected>Seleccione una opcion</option>
+                                    <option value="1"> Cierre parcial Turno Mañana </option>
+                                    <option value="2"> Cierre parcial Turno Tarde </option>
+                                    <option value="3"> Cierre parcial Turno Noche </option>
+                                    <option value="4"> Cierre total</option>
+                                </select>
+                            </div>
                         </div>
+                                
+
+                        <div class="row">
+                            <div class="col-6">
+                                <div class="form-group">
+                                    <label for="">Monto inicio</label>
+                                    <input type="text" class="form-control cerrar-monto-inicio" placeholder="" disabled>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="form-group">
+                                    <label for="">Monto Total</label>
+                                    <input type="text" class="form-control cerrar-monto-total" placeholder="" disabled>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="form-group">
                             <label for="">Monto real</label>
                             <input type="number" name="cerrar-monto-real" class="form-control cerrar-monto-real"
@@ -374,7 +404,7 @@
     {{-- <script src="{{ asset('assets/vendors/jquery/jquery.min.js') }}"></script> --}}
 
     {{-- <script src="https://code.jquery.com/jquery-3.3.1.js"></script> --}}
-    {{-- <script defer src="{{ asset('js/resources/cajas_.js')}}"></script> --}}
-    <script defer src="{{ asset('js/cajas.min.js')}}"></script>
+    <script defer src="{{ asset('js/resources/cajas_.js')}}"></script>
+    {{-- <script defer src="{{ asset('js/cajas.min.js')}}"></script> --}}
 
 @endsection

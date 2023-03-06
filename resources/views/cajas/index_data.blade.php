@@ -10,7 +10,7 @@
                 <th>Egresos</th> --}}
                 <th>Monto real</th>
                 <th>Diferencia</th>
-                {{-- <th>Estado</th> --}}
+                <th> Tipo </th>
             </tr>
         </thead>
         <tbody class="historial">
@@ -34,7 +34,7 @@
                             @endif
                              
                         </td>
-                        {{-- <td>{{ $item->estado }} </td> --}}
+                        <td>{{ $item->estado }} </td>
                     </tr>
                 @endforeach
             @endif

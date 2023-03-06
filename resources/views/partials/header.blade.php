@@ -100,12 +100,14 @@
                         @endrole
                         @role("administrador")
                         <li><a class="dropdown-item" href="{{url("egresos")}}"> Egresos </a></li>
+                        <li><a class="dropdown-item" href="{{url("ingresos")}}"> Ingresos </a></li> 
                         <li> 
                             <hr class="dropdown-divider">
                         </li>
                         @endrole  
                         @role("administrador")
-                        <li><a class="dropdown-item" href="{{url("ingresos")}}"> Ingresos </a></li> 
+                        
+                        <li><a class="dropdown-item" href="{{route('estadisticas.articulos')}}"> Estadisticas </a></li> 
                         @endrole
                         <li> 
                             <hr class="dropdown-divider">

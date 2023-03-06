@@ -54,6 +54,9 @@ Echo.channel('pedidos-pendientes')
                 $(".pedido-" + e.venta_id).remove();
                 return false;
             }
+            if(e.estado === "refrescar"){
+                window.location.href = window.location.href
+            }
             var articulos = await e.articulos.map(function(item) {
                 return ` <tr> <td> <strong>${item.cantidad}</strong></td>  <td> <strong>${item.articulo}</strong> </td>  </tr> `;
             });

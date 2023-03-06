@@ -18,6 +18,10 @@ $(document).ready(function() {
     $(document).on("click", ".listado-eliminar", async function() {
         var thi = $(this)
         var id = $(this).parent().parent().find(".id").attr("data-id");
+        var monto = $(this).parent().parent().find(".monto").attr("data-monto")
+        monto = parseFloat((monto))
+        var modopago = $(this).parent().parent().find(".modopago").attr("data-modopago")
+        modopago = $.trim(modopago.toLowerCase())
         var url = window.location.origin + "/ventas/" + id + "/destroy";
         var data = {
             id: id
@@ -33,42 +37,89 @@ $(document).ready(function() {
         })
 
         try {
-            if (status.isConfirmed == true && status.value == true) {
-                await $.ajax({
-                    type: "delete",
-                    url: url,
-                    data: data,
-                    dataType: "json",
-                    headers: {
-                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                    },
-                    success: function(response) {
-                        if (response.status == "success") {
-                            $(thi).parent().parent().remove();
-                        }
-                        if (response.status == "success" && response.message) {
-                            msjAlert(response.message)
-                        }
-                        if (response.status == "error" && response.message) {
-                            msjAlert(response.message, true)
-                        }
-
-                    },
-                    error: function(response) {
-                        msjAlert(JSON.parse(response.responseText).message, true)
-
-                    }
-                }); // ajax
-
+            if (status.isConfirmed !== true && status.value !== true) {
+                throw new Error('');
             }
+            var status = await $.ajax({
+                type: "delete",
+                url: url,
+                data: data,
+                dataType: "json",
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                success: function(response) {
+                    if (response.status === "success") {
+                        $(thi).parent().parent().remove(); 
+                    }
+                    if (response.status === "success" && response.message) {
+                        msjAlert(response.message)
+                    }
+                    if (response.status === "error" && response.message) {
+                        msjAlert(response.message, true)
+                    }
+
+                },
+                error: function(response) {
+                    msjAlert("Se produjo un error al eliminar.", true)
+                    // msjAlert(JSON.parse(response.responseText).message, true)
+                }
+            }); // ajax
+ 
+
+            if( status.status === "success" && status.message === "Eliminado"){
+                var cant_ventas = $.trim($(".cantidad_completas").html())
+                cant_ventas = parseInt(cant_ventas  -1)
+                $(".cantidad_completas").html(cant_ventas)
+    
+                if( modopago === "efectivo" ){
+                    var actual = $.trim($(".monto_efectivo").html())
+                    actual = parseFloat((actual - monto)).toFixed(2)
+                    $(".monto_efectivo").html(actual)
+        
+                    var ingresos = $.trim($(".monto_completas").html())
+                    actual = parseFloat((ingresos - monto)) .toFixed(2)
+                    $(".monto_completas").html(actual)
+    
+                    var total = $.trim($(".total").html())
+                    actual = parseFloat((total - monto)) .toFixed(2)
+                    $(".monto_completas").html(actual)
+                }
+                if( modopago === "debito" ){
+                    var actual = $.trim($(".monto_debito").html())
+                    actual = parseFloat((actual - monto)).toFixed(2)
+                    $(".monto_debito").html(actual)
+                }
+                if( modopago === "efectivo pedidosya" ){
+                    var actual = $.trim($(".monto_efectivo_pedidosya").html())
+                    actual = parseFloat((actual - monto)).toFixed(2)
+                    $(".monto_efectivo_pedidosya").html(actual)
+        
+                    var ingresos = $.trim($(".monto_completas").html())
+                    actual = parseFloat((ingresos - monto)) .toFixed(2)
+                    $(".monto_completas").html(actual)
+                    
+                    var total = $.trim($(".total").html())
+                    actual = parseFloat((total - monto)) .toFixed(2)
+                    $(".monto_completas").html(actual)
+    
+                }
+                if( modopago === "credito pedidosya" ){
+                    var actual = $.trim($(".monto_credito_pedidosya").html())
+                    actual = parseFloat((actual - monto)).toFixed(2)
+                    $(".monto_credito_pedidosya").html(actual)
+                }
+            }
+
+
         } catch (error) {
             $(thi).html('<i class="bi bi-trash"></i>')
 
         } finally {
-            $(thi).html('<i class="bi bi-trash"></i>')
-
+            $(thi).html('<i class="bi bi-trash"></i>') 
         }
 
+        
 
     }); // eliminar
 
@@ -158,7 +209,10 @@ $(document).ready(function() {
                 if ($("#tabla")[0]) $("#tabla").html(response[0]);
                 $(".cantidad_completas").text(response[1].cantidad_completas)
                 $(".monto_completas").text(response[1].monto_completas)
-                $(".monto_credito").text(response[1].monto_credito)
+                // $(".monto_credito").text(response[1].monto_credito)
+                $(".monto_efectivo").text(response[1].monto_efectivo)
+                $(".monto_efectivo_pedidosya").text(response[1].monto_efectivo_pedidosya)
+                $(".monto_credito_pedidosya").text(response[1].monto_credito_pedidosya)
                 $(".monto_debito").text(response[1].monto_debito)
                 $(".monto_egreso").text(response[1].monto_egreso)
                 $(".total").text(response[1].total)
@@ -168,9 +222,9 @@ $(document).ready(function() {
     }
 
 
-    function msjAlert(msj = '', error) {
+    function msjAlert(msj = '', error=false) {
         var color = "#3cb11f";
-        if (error == true) color = "#d73813";
+        if (error === true) color = "#d73813";
         Toastify({
             text: msj,
             duration: 5000,

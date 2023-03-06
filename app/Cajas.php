@@ -15,7 +15,9 @@ class Cajas extends Model
 
     protected $table= "cajas";
     protected $fillable = [
-        'id','caja','creator_id','habilitado','eliminado','created_at','updated_at'
+        'id','caja','creator_id',
+        "estado_cierre",
+        'habilitado','eliminado','created_at','updated_at'
     ];
 
     

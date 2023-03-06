@@ -24,10 +24,90 @@
 
                 <div class="row m-0 p-0">
 
-                    {{-- cantidad de ventas --}}
-                    <div class="col-lg-2 col-md-6">
+                    {{-- ganancias debito --}}
+                    <div class="col-lg-3 col-md-6">
                         <div class="card mb-1 shadow">
-                            <div class="card-body px-3 py-4-5">
+                            <div class="card-body px-3 py-4">
+                                <div class="row">
+                                    <div class="col-4">
+                                        <div class="stats-icon blue">
+                                            <i class="iconly-boldWallet"></i>
+                                        </div>
+                                    </div>
+                                    <div class="col">
+                                        <h6 class="text-muted font-semibold">D&eacute;bito</h6>
+                                        <h6 class="font-extrabold mb-0 monto_debito">{{ isset($monto_debito) ?$monto_debito: 0 }}</h6>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- ganancias Efectivo --}}
+                    <div class="col-lg-3 col-md-6">
+                        <div class="card mb-1 shadow">
+                            <div class="card-body px-3 py-4">
+                                <div class="row">
+                                    <div class="col-4">
+                                        <div class="stats-icon blue">
+                                            <i class="iconly-boldWallet"></i>
+                                        </div>
+                                    </div>
+                                    <div class="col">
+                                        <h6 class="text-muted font-semibold">Efectivo</h6>
+                                        <h6 class="font-extrabold mb-0 monto_efectivo">{{ isset($monto_efectivo) ?$monto_efectivo:0}}</h6>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    {{-- ganancias Efectivo Pedidos ya --}}
+                    <div class="col-lg-3 col-md-6">
+                        <div class="card mb-1 shadow">
+                            <div class="card-body px-3 py-4">
+                                <div class="row">
+                                    <div class="col-4">
+                                        <div class="stats-icon blue">
+                                            <i class="iconly-boldWallet"></i>
+                                        </div>
+                                    </div>
+                                    <div class="col">
+                                        <h6 class="text-muted font-semibold">Efectivo PedidosYa</h6>
+                                        <h6 class="font-extrabold mb-0 monto_efectivo_pedidosya">{{ isset($monto_efectivo_pedidosya) ?$monto_efectivo_pedidosya:0}}</h6>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    {{-- ganancias Creditos Pedidos ya --}}
+                    <div class="col-lg-3 col-md-6">
+                        <div class="card mb-1 shadow">
+                            <div class="card-body px-3 py-4">
+                                <div class="row">
+                                    <div class="col-4">
+                                        <div class="stats-icon blue">
+                                            <i class="iconly-boldWallet"></i>
+                                        </div>
+                                    </div>
+                                    <div class="col">
+                                        <h6 class="text-muted font-semibold">Creditos PedidosYa</h6>
+                                        <h6 class="font-extrabold mb-0 monto_credito_pedidosya">{{ isset($monto_credito_pedidosya) ?$monto_credito_pedidosya:0}}</h6>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+
+
+                    {{-- cantidad de ventas --}}
+                    <div class="col-lg-3 col-md-6">
+                        <div class="card mb-1 shadow">
+                            <div class="card-body px-3 py-4">
                                 <div class="row ">
                                     <div class="col-4  ">
                                         <div class="stats-icon blue">
@@ -35,7 +115,7 @@
                                         </div>
                                     </div>
                                     <div class="col">
-                                        <h6 class="text-muted font-semibold">Ventas</h6>
+                                        <h6 class="text-muted font-semibold">Cant de Ventas</h6>
                                         <h6 class="font-extrabold mb-0 cantidad_completas">{{ isset($cantidad_completas) ?$cantidad_completas :0}}</h6>
                                     </div>
                                 </div>
@@ -44,9 +124,9 @@
                     </div>
 
                     {{-- ganancias ventas --}}
-                    <div class="col-lg-2 col-md-6">
+                    <div class="col-lg-3 col-md-6">
                         <div class="card mb-1 shadow">
-                            <div class="card-body px-3 py-4-5">
+                            <div class="card-body px-3 py-4">
                                 <div class="row">
                                     <div class="col-4">
                                         <div class="stats-icon blue">
@@ -54,7 +134,7 @@
                                         </div>
                                     </div>
                                     <div class="col ">
-                                        <h6 class="text-muted font-semibold">Ganancias</h6>
+                                        <h6 class="text-muted font-semibold">Ingresos</h6>
                                         <h6 class="font-extrabold mb-0 monto_completas">{{isset($monto_completas)?$monto_completas:0}}</h6>
                                     </div>
                                 </div>
@@ -62,48 +142,12 @@
                         </div>
                     </div>
 
-                    {{-- ganancias debito --}}
-                    <div class="col-lg-2 col-md-6">
-                        <div class="card mb-1 shadow">
-                            <div class="card-body px-3 py-4-5">
-                                <div class="row">
-                                    <div class="col-4">
-                                        <div class="stats-icon blue">
-                                            <i class="iconly-boldWallet"></i>
-                                        </div>
-                                    </div>
-                                    <div class="col">
-                                        <h6 class="text-muted font-semibold">Debito</h6>
-                                        <h6 class="font-extrabold mb-0 monto_debito">{{ isset($monto_debito) ?$monto_debito: 0 }}</h6>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {{-- ganancias credito --}}
-                    <div class="col-lg-2 col-md-6">
-                        <div class="card mb-1 shadow">
-                            <div class="card-body px-3 py-4-5">
-                                <div class="row">
-                                    <div class="col-4">
-                                        <div class="stats-icon blue">
-                                            <i class="iconly-boldWallet"></i>
-                                        </div>
-                                    </div>
-                                    <div class="col">
-                                        <h6 class="text-muted font-semibold">Credito</h6>
-                                        <h6 class="font-extrabold mb-0 monto_credito">{{ isset($monto_credito) ?$monto_credito:0}}</h6>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    
 
                     {{-- egresos --}}
-                    <div class="col-lg-2 col-md-6">
+                    <div class="col-lg-3 col-md-6">
                         <div class="card mb-1 shadow">
-                            <div class="card-body px-3 py-4-5">
+                            <div class="card-body px-3 py-4">
                                 <div class="row">
                                     <div class="col-4">
                                         <div class="stats-icon red">
@@ -120,9 +164,9 @@
                     </div>
 
                     {{-- total --}}
-                    <div class="col-lg-2 col-md-6">
+                    <div class="col-lg-3 col-md-6">
                         <div class="card mb-1 shadow">
-                            <div class="card-body px-3 py-4-5">
+                            <div class="card-body px-3 py-4">
                                 <div class="row">
                                     <div class="col-4">
                                         <div class="stats-icon blue">
@@ -317,7 +361,7 @@
     {{-- <script src="{{ asset('assets/vendors/jquery/jquery.min.js') }}"></script> --}}
 
 
-    {{-- <script defer src="{{ asset('js/resources/ventas.listado.js') }}">  </script> --}}
+    {{-- <script defer src="{{ asset('js/resources/ventas.listado_.js') }}">  </script> --}}
     <script defer src="{{ asset('js/ventas.listado.min.js') }}">  </script>
 
    

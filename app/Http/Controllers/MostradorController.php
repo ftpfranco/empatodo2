@@ -25,7 +25,7 @@ class MostradorController extends Controller
         $t1_hora_hasta = '16:00';
 
         $t2_hora_desde = '16:01';
-        $t2_hora_hasta = '00:00';
+        $t2_hora_hasta = "23:59";
 
         if (  date("H:i") >= $t2_hora_hasta && date("H:i") <= $t1_hora_desde    ) {
             $ventas = array();
@@ -35,6 +35,7 @@ class MostradorController extends Controller
         $venta = Ventas::select('ventas.id',   'ventas.cliente',  'ventas_detalle_articulo.cantidad',"ventas.created_at", 'ventas_detalle_articulo.articulo')
             ->leftjoin('ventas_detalle_articulo',  'ventas_detalle_articulo.venta_id',   '=',  'ventas.id')
             ->where('ventas.eliminado', false)
+            ->where('ventas_detalle_articulo.eliminado', false)
             ->where('ventas.fecha', date('Y-m-d'))
             ->whereIn('ventas.tipoenvio_id', [1, 2])
             ;

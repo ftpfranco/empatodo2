@@ -73,7 +73,7 @@
                                 <div class="divider-text">Datos de acceso</div>
                             </div> --}}
                             <div class="row">
-                                <h4>Configuracion de acceso</h4>
+                                <h5>Configuracion de acceso</h5>
                                 <div class="col-lg-6">
                                     <div class="form-group">
                                         <label>Mail <span class="" style="color:red">*</span></label>
@@ -91,7 +91,7 @@
                             </div>
                             <br>
 
-                            <h4>Turno laboral <span class="" style="color:red">*</span></h4>
+                            <h5>Turno laboral <span class="" style="color:red">*</span></h5>
                             <div class="row">
                                 <div class="col-12">
                                     <label>Turno Mañana </label>
@@ -131,7 +131,7 @@
                             </div>
                             <br>
  
-                            <h4>Datos personales</h4>
+                            <h5>Datos personales</h5>
                             <div class="row">
                                 <div class="col ">
                                     <div class="form-group">
@@ -240,7 +240,7 @@
                             {{-- <div class="divider">
                                 <div class="divider-text">Datos de acceso</div>
                             </div> --}}
-                            <h4>Configuracion de acceso</h4>
+                            <h5>Configuracion de acceso</h5>
                             <div class="row">
                                 <div class="col-lg-6">
                                     <div class="form-group">
@@ -260,7 +260,7 @@
 
                             <br>
 
-                            <h4>Turno laboral <span class="" style="color:red">*</span></h4>
+                            <h5>Turno laboral <span class="" style="color:red">*</span></h5>
                             <div class="row">
                                 <div class="col-12">
                                     <label>Turno Mañana </label>
@@ -300,7 +300,7 @@
                             </div>
                             <br>
  
-                            <h4>Datos personales</h4>
+                            <h5>Datos personales</h5>
                             <input class="modal-editar-id" type="text" hidden>
                             <div class="row">
                                 <div class="col ">

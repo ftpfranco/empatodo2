@@ -66,10 +66,14 @@ class GastoController extends Controller
             'fechadesde' => 'nullable|date',
             'fechahasta' => 'nullable|date',
             'tipogasto' => 'nullable|numeric',
+        ],[
+            "fechadesde.date" => "La Fecha Desde ingresada no es válido",
+            "fechahasta.date" => "La Fecha Hasta ingresada no es válido",
+            "tipogasto.numeric" => "La Categoria de Egreso no es válido"
         ]);
 
         if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()->all()]);
+            return response()->json(["status"=>"error",'message' => $validator->errors()->all()]);
         }
 
         $fechadesde = request()->fechadesde ? request()->fechadesde : date("Y-m-d");
@@ -133,12 +137,19 @@ class GastoController extends Controller
             "id" => "required|numeric",
             'fecha' => 'nullable|date',
             'gastotipo' => 'required|numeric|max:100',
-            'monto' => 'required|numeric|max:9999999',
-            'comentario' => 'nullable|string|max:20000',
+            'monto' => 'required|numeric|max:999999.99',
+            'comentario' => 'nullable|string|max:1000',
+        ],[
+            "id.required" => "El Egreso ingresado no es válido",
+            "id.numeric" => "El Egreso ingresado no es válido",
+            "gastotipo.required" => "La Categoria de Egreso no es válido",
+            "monto.required" => "El Monto ingreado no es válido",
+            "monto.max" => "El Monto ingresado no es válido",
+            "comentario.max" => "El Comentario ingresado no es válido"
         ]);
 
         if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()->all()]);
+            return response()->json(["status"=> "error",'message' => $validator->errors()->all()]);
         }
         $user_id = auth()->user()->id;
         $data = array();
@@ -212,12 +223,19 @@ class GastoController extends Controller
         $validator = \Validator::make($request->all(), [
             'fecha' => 'nullable|date',
             'gastotipo' => 'required|numeric|max:100',
-            'monto' => 'required|numeric|max:9999999',
-            'comentario' => 'nullable|string|max:20000',
+            'monto'  => "required|numeric|max:999999.99",
+            'comentario' => 'nullable|string|max:1000',
+        ],[
+            "fecha.date" => "La Fecha ingresada no es válida",
+            "gastotipo.required" => "La Categoria de Egreso no es válida",
+            "monto.required" => "El Monto ingresado no es válido",
+            "monto.numeric" => "El Monto ingresado no es válido",
+            "monto.max" => "El Monto ingresado no es válido",
+            "comentario.max" => "El Comentario ingresado no es válido"
         ]);
 
         if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()->all()]);
+            return response()->json(["status"=>"error",'message' => $validator->errors()->all()]);
         }
 
         $user_id = auth()->user()->id;
@@ -299,6 +317,17 @@ class GastoController extends Controller
     public function delete(Request $request, $id)
     {
         //
+        $validator = \Validator::make($request->all(), [
+            'id' => 'required|numeric',
+        ],[
+            "id.required" => "El Egreso ingresado no es válido",
+            "id.numeric" => "El Egreso ingresado no es válido"
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(["status"=>"error",'message' => $validator->errors()->all()]);
+        }
+
         if(!$request->ajax()) return redirect()->to("egresos");
 
         $d = Gasto::select("fecha", "monto")->where("eliminado", false)->where("id", $id)->first();
@@ -317,12 +346,7 @@ class GastoController extends Controller
         Reportes::where('eliminado', false)->where("mes", $mes_fecha)->where("anio", $anio_fecha)->decrement("monto_egresos", $monto);
         Reportes::where('eliminado', false)->where("mes", $mes_fecha)->where("anio", $anio_fecha)->decrement("cantidad_egresos", 1);
 
-
-
-        if ($d) {
-            return response()->json(["status" => "success", "message" => "Eliminado!"]);
-        }
-        return response()->json(["status" => "error", "message" => "Error, no se pudo eliminar."]);
+        return response()->json(["status" => "success", "message" => "Eliminado!"]);
     }
 
 

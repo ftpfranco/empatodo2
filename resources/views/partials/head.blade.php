@@ -57,6 +57,11 @@
 <link rel="stylesheet" href="{{ asset('assets/vendors/bootstrap-icons/bootstrap-icons.css') }}">
 <link rel="stylesheet" href="{{ asset('assets/css/app.css') }}">
 
+<link rel="stylesheet" href="{{asset('css/loader.css')}}"> 
+{{-- <link rel="manifest" href="{{asset('manifest.json')}}/"> --}}
+
+
+
 <!-- <link rel="shortcut icon" href="assets/images/favicon.svg" type="image/x-icon"> -->
 
 <style>
@@ -82,7 +87,6 @@
     }
   </style>
 
-<link rel="stylesheet" href="{{asset('css/loader.css')}}"> 
 
 
 @yield('styles')

@@ -4,7 +4,11 @@
 @endsection
 @section('styles')
 
-    <link rel="stylesheet" href="{{ asset('assets/vendors/toastify/toastify.css') }}">
+    <link rel="stylesheet"  rel="preload" as="style" onload="this.onload=null;this.rel='stylesheet'"  href="{{ asset('assets/vendors/toastify/toastify.css') }}">
+    <noscript>
+        <link rel="stylesheet" href="{{ asset('assets/vendors/toastify/toastify.css') }}" >
+    </noscript>
+    
     <script src="{{ asset('assets/vendors/toastify/toastify.js') }}"></script>
 @endsection
 @section('content')

@@ -89,7 +89,7 @@
 
 
                                         <div class="row mt-3 mb-1 pt-3">
-                                            <label for="first-name-vertical">Articulos</label>
+                                            {{-- <label for="first-name-vertical">Articulos</label> --}}
                                             
                                              
                                             {{-- empanadas  --}}

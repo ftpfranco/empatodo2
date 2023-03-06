@@ -24,8 +24,6 @@ class IngresosTipoController extends Controller
     }
  
 
- 
-
     /**
      * Store a newly created resource in storage.
      *
@@ -37,10 +35,13 @@ class IngresosTipoController extends Controller
         //
         $validator = \Validator::make($request->all(), [
             'ingresotipo' => 'required|string|max:100',
+        ],[
+            "ingresotipo.required" => "La Categoria de Ingreso no es válido",
+            "ingresotipo.max" => "La Categoria de Ingreso no es válido"
         ]);
 
         if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()->all()]);
+            return response()->json(["status"=>"error",'message' => $validator->errors()->all()]);
         }
 
         $ingresotipo = request()->ingresotipo;
@@ -65,10 +66,13 @@ class IngresosTipoController extends Controller
         //
         $validator = \Validator::make($request->all(), [
             'ingresotipo' => 'required|string|max:100',
+        ],[
+            "ingresotipo.required" => "La Categoria de Ingreso no es válido",
+            "ingresotipo.max" => "La Categoria de Ingreso no es válido"
         ]);
 
         if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()->all()]);
+            return response()->json(["status"=>"error",'message' => $validator->errors()->all()]);
         }
 
         $ingresotipo = request()->ingresotipo;
@@ -86,6 +90,17 @@ class IngresosTipoController extends Controller
 
 
     public function eliminar(Request $request,$id){
+
+        $validator = \Validator::make($request->all(), [
+            'ingresotipo' => 'required|string|max:100',
+        ],[
+            "ingresotipo.required" => "La Categoria de Ingreso no es válido",
+            "ingresotipo.max" => "La Categoria de Ingreso no es válido"
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(["status"=>"error",'message' => $validator->errors()->all()]);
+        }
 
         // si no ex ajax redireccionar a home
         if(!$request->ajax()) return redirect()->route("home");

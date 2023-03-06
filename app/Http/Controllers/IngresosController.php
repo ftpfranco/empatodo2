@@ -71,10 +71,14 @@ class IngresosController extends Controller
             'fechadesde' => 'nullable|date',
             'fechahasta' => 'nullable|date',
             'tipoingreso' => 'nullable|numeric',
+        ],[
+            'fechadesde.date'=>"La Fecha Desde ingresada no es válido",
+            'fechahasta.date'=>"La Fecha Hasta ingresada no es válido",
+            'tipoingreso.numeric'=>"La Categoria de Ingreso no es válido",
         ]);
 
         if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()->all()]);
+            return response()->json(["status"=>"error",'message' => $validator->errors()->all()]);
         }
 
         $fechadesde = request()->fechadesde ? request()->fechadesde : date("Y-m-d");
@@ -150,13 +154,19 @@ class IngresosController extends Controller
         $validator = \Validator::make($request->all(), [
             'id' => 'required|numeric',
             'fecha' => 'nullable|date',
-            'monto' => 'nullable|numeric|max:99999999',
+            'monto' => 'nullable|numeric|max:999999.99',
             'tipoingreso' => 'nullable|numeric|max:99999',
             "comentario" => "nullable|string|max:50000"
+        ],[
+            "id.numeric"=>"El Ingreso no es válido",
+            "fecha.date" => "La Fecha ingresada no es válido",
+            "monto.max" => "El Monto ingresado no es válido",
+            "tipoingreso.max" => "La Categoria de Ingreso no es válido",
+            "comentario.max" => "El Comentario ingresado no es válido"
         ]);
 
         if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()->all()]);
+            return response()->json(["status"=>"error",'message' => $validator->errors()->all()]);
         }
 
         $user_id = auth()->user()->id;
@@ -218,6 +228,16 @@ class IngresosController extends Controller
     public function delete(Request $request, $id)
     {
         //
+        $validator = \Validator::make($request->all(), [
+            'id' => 'required|numeric',
+        ],[
+            "id.numeric"=>"El Ingreso no es válido",
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(["status"=>"error",'message' => $validator->errors()->all()]);
+        }
+
         if(!$request->ajax()) return redirect()->to("ingresos");
 
         $d = Ingreso::select("monto","fecha")->where("id", $id)->where("eliminado", false)->first();
@@ -261,12 +281,18 @@ class IngresosController extends Controller
         $validator = \Validator::make($request->all(), [
             'fecha' => 'nullable|date',
             'tipoingreso' => 'required|numeric|max:100',
-            'monto' => 'required|numeric|max:9999999',
-            'comentario' => 'nullable|string|max:20000',
+            'monto' => 'required|numeric|max:999999.99',
+            'comentario' => 'nullable|string|max:1000',
+        ],[
+            "fecha.date"=>"La Fecha ingresada no es válido",
+            "tipoingreso.required" => "Seleccioná un Tipo de Ingreso",
+            "tipoingreso.numeric"=> "La Categoria de Ingreso no es válido",
+            "tipoingreso.max" => "La Categoria de Ingreso no es válido",
+            "comentario.max" => "El Comentario ingresado no es válido"
         ]);
 
         if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()->all()]);
+            return response()->json(["status"=>"error",'message' => $validator->errors()->all()]);
         }
 
         $user_id = auth()->user()->id;

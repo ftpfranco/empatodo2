@@ -54,7 +54,7 @@ class ArticuloController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()->all()]);
+            return response()->json(["status"=>"error",'message' => $validator->errors()->all()]);
         }
 
         $marca_id = request()->marca ? request()->marca : null;
@@ -137,18 +137,27 @@ class ArticuloController extends Controller
             'nombre' => 'required|string|max:500',
             'nombre_corto' => 'nullable|string|max:500',
             'codigo' => 'nullable|string|max:200',
-            'stock' => 'nullable|numeric|max:99999999',
-            'stockminimo' => 'nullable|numeric|max:9999999',
+            'stock' => 'nullable|numeric|max:999999.99',
+            'stockminimo' => 'nullable|numeric|max:999999.99',
             // 'marca' => 'nullable|numeric|max:9999',
             'categoria' => 'nullable|numeric|max:9999',
-            'preciocosto' => 'nullable|numeric|max:99999999',
-            'precioventa' => 'nullable|numeric|max:99999999',
+            'preciocosto' => 'nullable|numeric|max:999999.99',
+            'precioventa' => 'nullable|numeric|max:999999.99',
             // 'habilitado' => 'nullable|string',
             // 'nota_adicional'=>"string|max:5000"
+        ],[
+            "nombre.required" => "El Nombre del Articulo no es válido",
+            "nombre.max" => "El Nombre del Articulo no es válido",
+            "nombre_corto.required" => "El Nombre del Articulo no es válido",
+            "nombre_corto.max" => "El Nombre del Articulo no es válido",
+            "stock.max" => "El Stock ingresado no es válido",
+            "stockminimo.max" => "El Stock Minimo ingresado no es válido",
+            "preciocosto.max" => "El Precio de Compra ingresado no es válido",
+            "precioventa.max" => "El Precio de Venta ingresado no es válido"
         ]);
 
         if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()->all()]);
+            return response()->json(["status"=>"error",'message' => $validator->errors()->all()]);
         }
 
         $nombre = request()->nombre ? request()->nombre : null;
@@ -263,12 +272,15 @@ class ArticuloController extends Controller
 
         $validator = \Validator::make($request->all(), [
             'id' => 'nullable|numeric',
-            'stock' => 'nullable|numeric|max:99999999',
+            'stock' => 'nullable|numeric|max:999999.99',
             // 'nota_adicional'=>"string|max:5000"
+        ],[
+            "stock.numeric" => "El Stock ingresado no es válido",
+            "stock.max" => "El Stock ingresado no es válido"
         ]);
 
         if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()->all()]);
+            return response()->json(["status"=>"error",'message' => $validator->errors()->all()]);
         }
 
         $id = request()->id ? request()->id : 0;
@@ -325,18 +337,27 @@ class ArticuloController extends Controller
             'nombre' => 'required|string|max:500',
             'nombre_corto' => 'required|string|max:500',
             'codigo' => 'nullable|string|max:200',
-            'stock' => 'nullable|numeric|max:99999999',
-            'stockminimo' => 'nullable|numeric|max:9999999',
+            'stock' => 'nullable|numeric|max:999999.99',
+            'stockminimo' => 'nullable|numeric|max:999999.99',
             'marca' => 'nullable|numeric|max:9999',
             'categoria' => 'nullable|numeric|max:9999',
-            'preciocosto' => 'nullable|numeric|max:99999999',
-            'precioventa' => 'nullable|numeric|max:99999999',
+            'preciocosto' => 'nullable|numeric|max:999999.99',
+            'precioventa' => 'nullable|numeric|max:999999.99',
             // 'habilitado' => 'nullable|string',
             // 'nota_adicional'=>"string|max:5000"
+        ],[
+            "nombre.required" => "El Nombre del Articulo no es válido",
+            "nombre.max" => "El Nombre del Articulo no es válido",
+            "nombre_corto.required" => "El Nombre del Articulo no es válido",
+            "nombre_corto.max" => "El Nombre del Articulo no es válido",
+            "stock.max" => "El Stock ingresado no es válido",
+            "stockminimo.max" => "El Stock Minimo ingresado no es válido",
+            "preciocosto.max" => "El Precio de Compra ingresado no es válido",
+            "precioventa.max" => "El Precio de Venta ingresado no es válido"
         ]);
 
         if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()->all()]);
+            return response()->json(["status"=>"error",'message' => $validator->errors()->all()]);
         }
 
         $articulo = request()->nombre ? request()->nombre : null;

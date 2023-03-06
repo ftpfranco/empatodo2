@@ -16,7 +16,8 @@ class CajasDetalle extends Model
     protected $table= "cajas_detalle";
     protected $fillable = [
         'id','caja_id','user_id','inicio_fecha','cierre_fecha','inicio_hora','cierre_hora','monto_inicio','monto_estimado','monto_real','diferencia',
-        'ingresos','egresos','estado','caja_abierta','eliminado','created_at','updated_at'
+        'ingresos','egresos','estado','caja_abierta',
+        'eliminado','created_at','updated_at'
     ];
 
     

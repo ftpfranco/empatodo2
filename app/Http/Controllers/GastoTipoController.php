@@ -32,11 +32,14 @@ class GastoTipoController extends Controller
         //
         $validator = \Validator::make($request->all(), [
             'tipogasto' => 'required|string|max:100',
+        ],[
+            "tipogasto.required" => "El Egreso ingresado no es válido",
+            "tipogasto.max" => "El Egreso ingresado no es válido"
         ]);
 
         
         if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()->all()]);
+            return response()->json(["status"=>"error",'message' => $validator->errors()->all()]);
         }
         $user_id = auth()->user()->id;
         $item = request()->tipogasto;
@@ -71,6 +74,16 @@ class GastoTipoController extends Controller
     public function eliminar(Request $request, $id)
     {
         //
+        $validator = \Validator::make($request->all(), [
+            'tipogasto' => 'required|string|max:100',
+        ],[
+            "tipogasto.required" => "El Egreso ingresado no es válido",
+            "tipogasto.max" => "El Egreso ingresado no es válido"
+        ]);
+        
+        if ($validator->fails()) {
+            return response()->json(["status"=>"error",'message' => $validator->errors()->all()]);
+        }
 
         $d = GastoTipo::where("id", $id)->where("eliminado",false)->update([
             'eliminado' => true,
@@ -96,10 +109,14 @@ class GastoTipoController extends Controller
         //
         $validator = \Validator::make($request->all(), [
             'tipogasto' => 'required|string|max:100',
+        ],[
+            "tipogasto.required" => "El Egreso ingresado no es válido",
+            "tipogasto.max" => "El Egreso ingresado no es válido"
         ]);
 
+        
         if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()->all()]);
+            return response()->json(["status"=>"error",'message' => $validator->errors()->all()]);
         }
 
         $user_id = auth()->user()->id;

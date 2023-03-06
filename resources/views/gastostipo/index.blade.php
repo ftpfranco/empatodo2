@@ -37,7 +37,7 @@
                                 <div class="card-body">
 
                                     <!-- tabla -->
-                                    <div class="table-responsive mt-4">
+                                    <div class="table-responsive mt-1">
                                         <table class="table table-hover mb-0">
                                             <thead>
                                                 <tr>

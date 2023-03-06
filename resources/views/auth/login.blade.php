@@ -6,21 +6,20 @@
 @section('content')
 
     <div class="container col-lg-4 col-md-6 ">
-        <div class="pt-4 mt-4 mb-4 pb-4 ">
-            
-            @if (isset($errors) && !empty($errors))
+        @if (isset($errors) && count($errors)>0)
+            <div class="pt-4 mt-4 mb-4 pb-4 ">
                 @foreach ($errors->all() as  $item)
                 <div class="alert alert-danger alert-dismissible ">
                     {{$item}}
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
                 @endforeach
-            @endif
-        </div>
+            </div>
+        @endif
         <div class="col-12 ">
-            <div>
+            <div class="login">
                 <div class="auth-logo text-center ">
-                    <a href="{{url('ventas-diarias')}}"><img src="{{asset('images/logo.jpg')}}" alt="Logo"></a>
+                    <a href="{{url('ventas-diarias')}}"><img class="img-fluid" src="{{asset('images/logo.jpg')}}" alt="Logo"></a>
                 </div>
 
                 {{-- <h1 class="auth-title">Log in.</h1> --}}
@@ -62,7 +61,7 @@
                                             {{ __('Olvidaste la contraseña?') }}
                                         </a>
                                     @endif
-                        .</p>
+                        </p>
                 </div>
             </div>
         </div>

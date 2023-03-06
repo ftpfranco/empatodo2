@@ -28,6 +28,7 @@ class CreateCajasdetalleTable extends Migration
             $table->decimal('diferencia')->default(0);
             $table->decimal('ingresos')->default(0);
             $table->decimal('egresos')->default(0);
+            $table->decimal('estado_cierre',1,0)->default(null); 
             // $table->string('estado')->nullable(); // justo, con faltante
             $table->boolean("caja_abierta")->default(false);
             $table->boolean("eliminado")->default(false);

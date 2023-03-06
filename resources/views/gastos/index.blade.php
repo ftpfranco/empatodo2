@@ -43,7 +43,7 @@
 
                     <div class="col-lg-3 col-md-6">
                         <div class="card mb-1 shadow">
-                            <div class="card-body px-3 py-4-5">
+                            <div class="card-body px-3 py-4">
                                 <div class="row">
                                     <div class="col-4">
                                         <div class="stats-icon red">
@@ -61,7 +61,7 @@
 
                     <div class="col-lg-3 col-md-6">
                         <div class="card mb-1 shadow">
-                            <div class="card-body px-3 py-4-5">
+                            <div class="card-body px-3 py-4">
                                 <div class="row">
                                     <div class="col-4">
                                         <div class="stats-icon red">

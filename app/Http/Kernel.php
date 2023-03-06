@@ -69,6 +69,7 @@ class Kernel extends HttpKernel
         'permission' => \Spatie\Permission\Middlewares\PermissionMiddleware::class,
         'role_or_permission' => \Spatie\Permission\Middlewares\RoleOrPermissionMiddleware::class,
 
+        'XssSanitizer' => \App\Http\Middleware\XssSanitizer::class,
 
 
     ];

@@ -1,10 +1,10 @@
 <div id="sidebar" class="active">
     <div class="sidebar-wrapper active">
-        <div class="sidebar-header pb-0">
+        <div class="sidebar-header pb-0 pt-0">
             <div class="d-flex justify-content-center">
                 <div class="logo">
                     <a href="{{url('ventas-diarias')}}">
-                        <img src="{{asset('images/logo.jpg')}}" class="responsive"   height="1rem" alt="Logo" srcset="">
+                        <img src="{{asset('images/logo.jpg')}}" class="responsive"  style="height: 9.2rem !important"  alt="Logo" srcset="">
                     </a>
                 </div> 
                 <div class="toggler">
@@ -13,7 +13,7 @@
             </div>
         </div>
         <div class="sidebar-menu">
-            <ul class="menu">
+            <ul class="menu mt-0">
 
 
                 {{-- @role("administrador")
@@ -317,7 +317,7 @@
 
                 
                 @hasanyrole("administrador")
-                <li class="sidebar-item   {{Request::path() == "estadisticas" || Request::path() == "estadisticas" || Request::path() == "estadisticas/articulos_vendidos_por_dia"  ?'active':''}} ">
+                <li class="sidebar-item   {{Request::path() == "estadisticas" || Request::path() == "estadisticas" || Request::path() == "estadisticas/articulos_vendidos_por_dia" || Request::path() == "estadisticas/ganancias_por_tipopago" || Request::path() == "estadisticas/porcentaje_ventas"   ?'active':''}} ">
                     <a href="{{ url('estadisticas') }}" class='sidebar-link'>
                         <i class="bi bi-bar-chart"></i>
                         <span>Estadisticas</span>

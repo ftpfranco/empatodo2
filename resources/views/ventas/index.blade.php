@@ -3,19 +3,23 @@
     Ventas
 @endsection
 @section('styles')
-    <link rel="stylesheet" href="{{ asset('assets/vendors/sweetalert2/sweetalert2.min.css') }}">
+    <link rel="preload" as="style" onload="this.onload=null;this.rel='stylesheet'" href="{{ asset('assets/vendors/sweetalert2/sweetalert2.min.css') }}">
 
-    <link rel="stylesheet" href="{{ asset('assets/vendors/toastify/toastify.css') }}">
+    <link rel="preload" as="style" onload="this.onload=null;this.rel='stylesheet'" href="{{ asset('assets/vendors/toastify/toastify.css') }}">
 
-    <link rel="stylesheet" href="{{ asset('css/table.css') }}">
-
+    <link rel="preload" as="style" onload="this.onload=null;this.rel='stylesheet'" href="{{ asset('css/table.css') }}">
+    <noscript>
+        <link rel="stylesheet" href="{{ asset('assets/vendors/sweetalert2/sweetalert2.min.css') }}" >
+        <link rel="stylesheet" href="{{ asset('assets/vendors/toastify/toastify.css') }}" >
+        <link rel="stylesheet" href="{{ asset('css/table.css') }}" >
+    </noscript>
 @endsection
 @section('content')
 
 
     <div class="page-heading mx-3 mb-1">
         <div class="mb-3 mt-0">
-            <a class="btn btn-outline-success mx-1 " href="{{ url('ventas/nuevo') }}"><strong>+</strong>NUEVO</a>
+            <a class="btn btn-sm btn-outline-success mx-1 " href="{{ url('ventas/nuevo') }}"><strong>+</strong>NUEVO</a>
         </div>
         <div class="d-flex justify-content-start">
             <h3>Ventas del dia</h3>
@@ -30,10 +34,86 @@
 
                 <div class="row m-0 p-0 ">
                     
-                    {{-- cantidad de ventas --}}
-                    <div class="col-lg-2 col-md-6">
+                    {{-- ganancias debito --}}
+                    <div class="col-lg-3 col-md-6">
                         <div class="card mb-1 shadow">
-                            <div class="card-body px-3 py-4-5">
+                            <div class="card-body px-3 py-4">
+                                <div class="row">
+                                    <div class="col-4">
+                                        <div class="stats-icon blue">
+                                            <i class="iconly-boldWallet"></i>
+                                        </div>
+                                    </div>
+                                    <div class="col">
+                                        <h6 class="text-muted font-semibold">D&eacute;bito</h6>
+                                        <h6 class="font-extrabold mb-0 monto_debito">{{$monto_debito?$monto_debito: 0 }}</h6>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- ganancias efectivo --}}
+                    <div class="col-lg-3 col-md-6">
+                        <div class="card mb-1 shadow">
+                            <div class="card-body px-3 py-4">
+                                <div class="row">
+                                    <div class="col-4">
+                                        <div class="stats-icon blue">
+                                            <i class="iconly-boldWallet"></i>
+                                        </div>
+                                    </div>
+                                    <div class="col">
+                                        <h6 class="text-muted font-semibold">Efectivo</h6>
+                                        <h6 class="font-extrabold mb-0 monto_efectivo">{{$monto_efectivo?$monto_efectivo:0}}</h6>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- ganancias efectivo pedidosya --}}
+                    <div class="col-lg-3 col-md-6">
+                        <div class="card mb-1 shadow">
+                            <div class="card-body px-3 py-4">
+                                <div class="row">
+                                    <div class="col-4">
+                                        <div class="stats-icon blue">
+                                            <i class="iconly-boldWallet"></i>
+                                        </div>
+                                    </div>
+                                    <div class="col">
+                                        <h6 class="text-muted font-semibold">Efectivo Pedidos Ya</h6>
+                                        <h6 class="font-extrabold mb-0 monto_efectivo_pedidosya">{{$monto_efectivo_pedidosya?$monto_efectivo_pedidosya:0}}</h6>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- ganancias credito pedidosya --}}
+                    <div class="col-lg-3 col-md-6">
+                        <div class="card mb-1 shadow">
+                            <div class="card-body px-3 py-4">
+                                <div class="row">
+                                    <div class="col-4">
+                                        <div class="stats-icon blue">
+                                            <i class="iconly-boldWallet"></i>
+                                        </div>
+                                    </div>
+                                    <div class="col">
+                                        <h6 class="text-muted font-semibold">Cr&eacute;dito Pedidos Ya</h6>
+                                        <h6 class="font-extrabold mb-0 monto_credito_pedidosya">{{$monto_credito_pedidosya?$monto_credito_pedidosya:0}}</h6>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {{-- cantidad de ventas --}}
+                    <div class="col-lg-3 col-md-6">
+                        <div class="card mb-1 shadow">
+                            <div class="card-body px-3 py-4">
                                 <div class="row ">
                                     <div class="col-4  ">
                                         <div class="stats-icon blue">
@@ -41,8 +121,8 @@
                                         </div>
                                     </div>
                                     <div class="col">
-                                        <h6 class="text-muted font-semibold">Ventas</h6>
-                                        <h6 class="font-extrabold mb-0">{{$cantidad_completas ?$cantidad_completas :0}}</h6>
+                                        <h6 class="text-muted font-semibold">Cant de Ventas</h6>
+                                        <h6 class="font-extrabold mb-0 cantidad_completas">{{$cantidad_completas ?$cantidad_completas :0}}</h6>
                                     </div>
                                 </div>
                             </div>
@@ -50,9 +130,9 @@
                     </div>
 
                     {{-- ganancias ventas --}}
-                    <div class="col-lg-2 col-md-6">
+                    <div class="col-lg-3 col-md-6">
                         <div class="card mb-1 shadow">
-                            <div class="card-body px-3 py-4-5">
+                            <div class="card-body px-3 py-4">
                                 <div class="row">
                                     <div class="col-4">
                                         <div class="stats-icon blue">
@@ -60,56 +140,20 @@
                                         </div>
                                     </div>
                                     <div class="col ">
-                                        <h6 class="text-muted font-semibold">Ganancias</h6>
-                                        <h6 class="font-extrabold mb-0">{{$monto_completas?$monto_completas:0}}</h6>
+                                        <h6 class="text-muted font-semibold"> Ingresos </h6>
+                                        <h6 class="font-extrabold mb-0 monto_completas">{{$monto_completas?$monto_completas:0}}</h6>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    {{-- ganancias debito --}}
-                    <div class="col-lg-2 col-md-6">
-                        <div class="card mb-1 shadow">
-                            <div class="card-body px-3 py-4-5">
-                                <div class="row">
-                                    <div class="col-4">
-                                        <div class="stats-icon blue">
-                                            <i class="iconly-boldWallet"></i>
-                                        </div>
-                                    </div>
-                                    <div class="col">
-                                        <h6 class="text-muted font-semibold">Debito</h6>
-                                        <h6 class="font-extrabold mb-0">{{$monto_debito?$monto_debito: 0 }}</h6>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {{-- ganancias credito --}}
-                    <div class="col-lg-2 col-md-6">
-                        <div class="card mb-1 shadow">
-                            <div class="card-body px-3 py-4-5">
-                                <div class="row">
-                                    <div class="col-4">
-                                        <div class="stats-icon blue">
-                                            <i class="iconly-boldWallet"></i>
-                                        </div>
-                                    </div>
-                                    <div class="col">
-                                        <h6 class="text-muted font-semibold">Credito</h6>
-                                        <h6 class="font-extrabold mb-0">{{$monto_credito?$monto_credito:0}}</h6>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    
 
                     {{-- egresos --}}
-                    <div class="col-lg-2 col-md-6">
+                    <div class="col-lg-3 col-md-6">
                         <div class="card mb-1 shadow">
-                            <div class="card-body px-3 py-4-5">
+                            <div class="card-body px-3 py-4">
                                 <div class="row">
                                     <div class="col-4">
                                         <div class="stats-icon red">
@@ -118,7 +162,7 @@
                                     </div>
                                     <div class="col">
                                         <h6 class="text-muted font-semibold">Egresos</h6>
-                                        <h6 class="font-extrabold mb-0">{{$monto_egreso?$monto_egreso:0}}</h6>
+                                        <h6 class="font-extrabold mb-0 monto_egreso">{{$monto_egreso?$monto_egreso:0}}</h6>
                                     </div>
                                 </div>
                             </div>
@@ -126,9 +170,9 @@
                     </div>
 
                     {{-- total --}}
-                    <div class="col-lg-2 col-md-6">
+                    <div class="col-lg-3 col-md-6">
                         <div class="card mb-1 shadow">
-                            <div class="card-body px-3 py-4-5">
+                            <div class="card-body px-3 py-4">
                                 <div class="row">
                                     <div class="col-4">
                                         <div class="stats-icon blue">
@@ -137,7 +181,7 @@
                                     </div>
                                     <div class="col">
                                         <h6 class="text-muted font-semibold">Total neto</h6>
-                                        <h6 class="font-extrabold mb-0">{{$total}}</h6>
+                                        <h6 class="font-extrabold mb-0 total">{{$total}}</h6>
                                     </div>
                                 </div>
                             </div>
@@ -290,7 +334,7 @@
                                                     <label for=""> {{ $item->descuento_importe }} </label>
                                                 </div>
                                                 <div>
-                                                    <label for=""> <strong>Total recibido: </strong></label>
+                                                    <label for="" class="recibido" data-recibido="{{ $item->total_recibido }}"> <strong>Total recibido: </strong></label>
                                                     @if ( $item->total_recibido > $item->monto)
                                                         <span class="badge bg-success">{{ $item->total_recibido }}</span>
                                                     @elseif(   $item->total_recibido < $item->monto )
@@ -307,7 +351,7 @@
                                                 </div>
                                                 <div>
                                                     <label for=""> <strong> Metodo de pago: </strong></label>
-                                                    <label for=""> {{ $item->tipo_pago }} </label>
+                                                    <label for="" class="modopago" data-modopago=" {{ $item->tipo_pago }}"> {{ $item->tipo_pago }} </label>
                                                 </div>
                                                 <div>
                                                     <label for=""> <strong> Estado de pago: </strong></label>
@@ -319,7 +363,7 @@
         
                                                 </div>
                                             </div>
-                                            <div class="col-lg-1">
+                                            <div class="col-lg-2">
                                                 @if (isset($item->tipoenvio_id) && $item->tipoenvio_id ==2)
                                                     <label class="btn btn-info btn-sm mt-1 listado-enviado"  data-bs-toggle="tooltip" data-bs-placement="top" title="Marcar como entregado" data-bs-original-title="Marcar como entregado" > <i class="bi bi-check-all"></i> Enviado </label>
                                                 @endif
@@ -417,7 +461,7 @@
     {{-- <script src="{{asset('assets/vendors/jquery/jquery.min.js')}}"></script> --}}
     {{-- <script src="https://code.jquery.com/jquery-3.3.1.js"></script> --}}
 
-      {{-- <script defer src="{{ asset('js/resources/ventas.index.js')}}"></script> --}}
+      {{-- <script defer src="{{ asset('js/resources/ventas.index_.js')}}"></script> --}}
       <script defer src="{{ asset('js/ventas.index.min.js')}}"></script>
 
  

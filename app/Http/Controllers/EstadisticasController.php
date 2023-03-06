@@ -15,18 +15,18 @@ class EstadisticasController extends Controller
         if($request->ajax()) {
             $filtro = request()->filtro? strtolower(request()->filtro) : "dia";
             
-            if($filtro == "semana"){
+            if($filtro === "semana"){
                 $semana = $this->semana();
                 return response()->json($semana);
             }
            
-            if($filtro == "mes"){
+            if($filtro === "mes"){
                 // listado con los dias del mes y sus cantidad de ventas
                 $mes = $this->mes();
                 return response()->json($mes);
             }
 
-            if($filtro == "anio"){
+            if($filtro === "anio"){
                 // listado de la cantidad de ventas en cada mes del año
                 $anio = $this->anio();
                 return response()->json($anio);
@@ -36,7 +36,7 @@ class EstadisticasController extends Controller
             $hoy = $this->hoy();
             return response()->json($hoy);
         }
-        return view( "estadisticas/index" );
+        return view("estadisticas.index" );
 
     }
 
@@ -411,6 +411,7 @@ class EstadisticasController extends Controller
         ->where("articulos_vendidos_por_dia.anio",date('Y'))
         ->where("articulos_vendidos_por_dia.mes",date('m')) 
         ->where("articulos_vendidos_por_dia.t1",true)
+        ->orderby("articulos_vendidos_por_dia.cantidad","desc")
         ->orderby("articulos_vendidos_por_dia.articulo_id","asc")
         ->get();
 
@@ -423,6 +424,7 @@ class EstadisticasController extends Controller
         ->where("articulos_vendidos_por_dia.mes",date('m')) 
         ->where("articulos_vendidos_por_dia.anio",date('Y'))
         ->where("articulos_vendidos_por_dia.t2",true)
+        ->orderby("articulos_vendidos_por_dia.cantidad","desc")
         ->orderby("articulos_vendidos_por_dia.articulo_id","asc")
         ->get();
 

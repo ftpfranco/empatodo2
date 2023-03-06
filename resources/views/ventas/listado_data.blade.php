@@ -26,7 +26,7 @@
                         <td data-label="#" class="bg-active">{{$total_ventas - $key}}</td>
                         <td data-label="Fecha">{{ $item->fecha }} <small>{{ $item->hora }}</small></td>
                         <td data-label="Cliente"> {!! (!empty($item->cliente) ) ? $item->cliente:   "<span class='tachado'>Sin nombre </span>"  !!}</td>
-                        <td data-label="Monto" class="text-end">{{ $item->monto }}</td>
+                        <td data-label="Monto" data-monto="{{ $item->monto?$item->monto:0 }}" class="text-end monto">{{ $item->monto ?$item->monto:0}}</td>
                         <td data-label="Descuento" class="text-end">{{ $item->descuento_importe }}</td>
                         <td data-label="Recibido" class="text-end">
                             @if ($item->total_recibido > $item->monto)
@@ -38,8 +38,8 @@
                             @endif
                         </td>
 
-                        <td data-label="Envio"> {{ $item->estadoenvio ?$item->estadoenvio : '-'}}</td>
-                        <td data-label="Pago"> {{ $item->tipo_pago?$item->tipo_pago: '-' }}</td>
+                        <td data-label="Envio"> {{ $item->estadoenvio ?$item->estadoenvio : ''}}</td>
+                        <td data-label="Pago" class="modopago" data-modopago="{{ $item->tipo_pago?$item->tipo_pago: '' }}"> {{ $item->tipo_pago?$item->tipo_pago: '' }}</td>
                         <td data-label="Estado Pago">
                             @if ($item->pago_completo)
                                 <span class="badge bg-success">Completo</span>

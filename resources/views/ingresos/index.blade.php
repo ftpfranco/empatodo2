@@ -44,7 +44,7 @@
 
                     <div class="col-lg-3 col-md-6">
                         <div class="card mb-1 shadow">
-                            <div class="card-body px-3 py-4-5">
+                            <div class="card-body px-3 py-4">
                                 <div class="row">
                                     <div class="col-4">
                                         <div class="stats-icon blue">
@@ -62,7 +62,7 @@
 
                     <div class="col-lg-3 col-md-6">
                         <div class="card mb-1 shadow">
-                            <div class="card-body px-3 py-4-5">
+                            <div class="card-body px-3 py-4">
                                 <div class="row">
                                     <div class="col-4">
                                         <div class="stats-icon blue">
@@ -137,7 +137,7 @@
                             </div> --}}
 
                             <div class="card-body">
-                                <div class="table-responsive mt-4" id="tabla">
+                                <div class="table-responsive " id="tabla">
                                     @include('ingresos.index_data')
                                 </div>
                             </div>
