@@ -389,7 +389,7 @@ class VentasController extends Controller
             ->get();
         $render = false;
 
-        return view("ventas.listado", compact("ventas", "tipo_envios",  "cantidad_completas",   "monto_completas", "monto_debito","monto_efectivo","monto_efectivo_pedidosya","monto_credito_pedidosya", "monto_credito", "monto_egreso", "total", "tipopagos", "render"));
+        return view("ventas.listado", compact("ventas", "tipo_envios",  "cantidad_completas",   "monto_completas", "monto_debito","monto_efectivo","monto_efectivo_pedidosya","monto_credito_pedidosya",  "monto_egreso", "total", "tipopagos", "render"));
     }
 
 
