@@ -1,6 +1,6 @@
 ARG PHP_VERSION=7.4
 ARG NODE_VERSION=14
-FROM fh1703/nginx_php:7.4 as base
+FROM fh1703/ubuntu18_nginx_php:7.4 as base
 
 # PHP_VERSION needs to be repeated here
 # See https://docs.docker.com/engine/reference/builder/#understand-how-arg-and-from-interact
