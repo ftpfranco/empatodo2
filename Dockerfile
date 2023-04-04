@@ -25,7 +25,7 @@ COPY . /var/www/html
 RUN composer install    \
     && mkdir -p storage/logs \
     && php artisan optimize:clear \
-    && chown -R webuser:webgroup /var/www/html \
+    && chown -R www-data:www-data /var/www/html \
     && sed -i 's/protected \$proxies/protected \$proxies = "*"/g' app/Http/Middleware/TrustProxies.php \
     && echo "MAILTO=\"\"\n* * * * * webuser /usr/bin/php /var/www/html/artisan schedule:run" > /etc/cron.d/laravel \
     && rm -rf /etc/cont-init.d/* \
