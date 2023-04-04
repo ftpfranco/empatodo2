@@ -39,7 +39,7 @@ RUN composer install --optimize-autoloader  \
     && cp .fly/entrypoint.sh /entrypoint \
     && chmod +x /entrypoint
 
-COPY supervisor/ /etc/supervisor/
+COPY .fly/supervisor/ /etc/supervisor/
 
 # If we're using Octane...
 RUN if grep -Fq "laravel/octane" /var/www/html/composer.json; then \
