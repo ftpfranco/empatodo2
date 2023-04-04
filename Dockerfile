@@ -3,10 +3,10 @@
 # Default to PHP 8.1, but we attempt to match
 # the PHP version from the user (wherever `flyctl launch` is run)
 # Valid version values are PHP 7.4+
-ARG PHP_VERSION=7.4
+ARG PHP_VERSION=8.1
 ARG NODE_VERSION=14
-FROM serversideup/php:${PHP_VERSION}-fpm-nginx-v2.2.0 as base
-# docker pull serversideup/php:7.4-fpm-nginx-v2.2.0#
+FROM serversideup/php:${PHP_VERSION}-fpm-nginx-v2.1.0 as base
+ 
 # PHP_VERSION needs to be repeated here
 # See https://docs.docker.com/engine/reference/builder/#understand-how-arg-and-from-interact
 ARG PHP_VERSION
@@ -95,7 +95,7 @@ FROM base
 COPY --from=node_modules_go_brrr /app/public /var/www/html/public-npm
 RUN rsync -ar /var/www/html/public-npm/ /var/www/html/public/ \
     && rm -rf /var/www/html/public-npm \
-    && chown -R www-data:www-data /var/www/html/public
+    && chown -R webuser:webgroup /var/www/html/public
 
 EXPOSE 8080
 EXPOSE 6001
