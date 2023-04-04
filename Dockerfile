@@ -73,10 +73,10 @@ RUN if [ -f "vite.config.js" ]; then \
         yarn $ASSET_CMD; \
     elif [ -f "package-lock.json" ]; then \
         npm ci --no-audit; \
-        npm run $ASSET_CMD -f; \
+        npm run $ASSET_CMD; \
     else \
         npm install -f; \
-        npm run $ASSET_CMD -f; \
+        npm run $ASSET_CMD; \
     fi;
 
 # From our base container created above, we
