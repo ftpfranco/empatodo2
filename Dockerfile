@@ -22,7 +22,7 @@ WORKDIR /var/www/html
 # copy application code, skipping files based on .dockerignore
 COPY . /var/www/html
 
-RUN composer install --optimize-autoloader --no-dev \
+RUN composer install --optimize-autoloader  \
     && mkdir -p storage/logs \
     && php artisan optimize:clear \
     && chown -R webuser:webgroup /var/www/html \
