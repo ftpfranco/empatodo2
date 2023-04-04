@@ -14,7 +14,7 @@ ARG PHP_VERSION
 LABEL fly_launch_runtime="laravel"
 
 RUN apt-get update && apt-get install -y \
-    git curl zip unzip rsync ca-certificates nano htop cron \
+    git curl zip unzip rsync ca-certificates nano htop cron supervisor \
     php${PHP_VERSION}-pgsql php${PHP_VERSION}-bcmath \
     php${PHP_VERSION}-swoole php${PHP_VERSION}-xml php${PHP_VERSION}-mbstring \
     && apt-get clean \
@@ -34,6 +34,7 @@ RUN composer install --optimize-autoloader  \
     && sed -i 's/protected \$proxies/protected \$proxies = "*"/g' app/Http/Middleware/TrustProxies.php \
     && echo "MAILTO=\"\"\n* * * * * webuser /usr/bin/php /var/www/html/artisan schedule:run" > /etc/cron.d/laravel \
     && rm -rf /etc/cont-init.d/* \
+    && cp .fly/supervisor/supervisord.conf /etc/supervisor/conf.d/supervisord.conf \
     && cp .fly/nginx-websockets.conf /etc/nginx/conf.d/websockets.conf \
     && cp .fly/entrypoint.sh /entrypoint \
     && chmod +x /entrypoint

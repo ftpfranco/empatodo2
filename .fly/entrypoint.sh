@@ -16,6 +16,7 @@ if [ $# -gt 0 ]; then
     #  nohup /usr/bin/php /var/www/html/artisan queue:work  --sleep=3 --tries=3 --timeout=3600   </dev/null &>/dev/null &
 
 else
+    exec supervisord -c /etc/supervisor/supervisord.conf
     exec /init
 fi
 
