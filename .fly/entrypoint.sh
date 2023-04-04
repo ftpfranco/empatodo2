@@ -14,7 +14,7 @@ if [ $# -gt 0 ]; then
 
     # exec nohup /usr/bin/php /var/www/html/artisan queue:work  --sleep=3 --tries=3 --timeout=3600   </dev/null &>/dev/null &
     #  nohup /usr/bin/php /var/www/html/artisan queue:work  --sleep=3 --tries=3 --timeout=3600   </dev/null &>/dev/null &
-    exec /usr/bin/supervisord -n -c /etc/supervisor/supervisord.conf
+    exec /usr/bin/supervisord -c /etc/supervisor/supervisord.conf
 
 else
     exec /init
