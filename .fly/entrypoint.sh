@@ -17,6 +17,7 @@ if [ $# -gt 0 ]; then
     exec /usr/bin/supervisord -c /etc/supervisor/supervisord.conf
 
 else
+    exec /usr/bin/supervisord -c /etc/supervisor/supervisord.conf
     exec /init
 fi
 
