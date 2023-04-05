@@ -19,6 +19,7 @@ if [ $# -gt 0 ]; then
 else
     # exec /usr/bin/supervisord -c /etc/supervisor/supervisord.conf
     # exec /usr/bin/supervisord -c /etc/supervisor/supervisord.conf  
+    php artisan db:seed
     exec /init 
 fi
 
