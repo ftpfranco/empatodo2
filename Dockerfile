@@ -35,7 +35,7 @@ RUN composer install --optimize-autoloader  \
     && echo "MAILTO=\"\"\n* * * * * webuser /usr/bin/php /var/www/html/artisan schedule:run" > /etc/cron.d/laravel \
     && rm -rf /etc/cont-init.d/* \
     # && cp .fly/supervisor/supervisord.conf /etc/supervisor/conf.d/laravel-worker.conf \
-    && cp -r .fly/supervisor/ /etc/supervisor/ \
+    && cp -r .fly/supervisor/ /etc/ \
     && cp .fly/nginx-websockets.conf /etc/nginx/conf.d/websockets.conf \
     && cp .fly/entrypoint.sh /entrypoint \
     && chmod +x /entrypoint
