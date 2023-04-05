@@ -14,7 +14,7 @@ ARG PHP_VERSION
 LABEL fly_launch_runtime="laravel"
 
 RUN apt-get update && apt-get install -y \
-    git curl zip unzip rsync ca-certificates nano htop cron supervisor \
+    git curl zip unzip rsync ca-certificates   htop cron  \
     php${PHP_VERSION}-pgsql php${PHP_VERSION}-bcmath \
     php${PHP_VERSION}-swoole php${PHP_VERSION}-xml php${PHP_VERSION}-mbstring \
     && apt-get clean \
@@ -27,7 +27,7 @@ WORKDIR /var/www/html
 # copy application code, skipping files based on .dockerignore
 COPY . /var/www/html
 
-RUN composer install --optimize-autoloader  \
+RUN composer install --optimize-autoloader --no-dev  \
     && mkdir -p storage/logs \
     && php artisan optimize:clear \
     && chown -R webuser:webgroup /var/www/html \
@@ -66,6 +66,7 @@ RUN mkdir -p  /app
 WORKDIR /app
 COPY . .
 COPY --from=base /var/www/html/vendor /app/vendor
+COPY --from=base /var/www/html/public /app/public
 
 # Use yarn or npm depending on what type of
 # lock file we might find. Defaults to
