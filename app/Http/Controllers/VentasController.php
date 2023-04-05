@@ -234,7 +234,24 @@ class VentasController extends Controller
             $data["venta_id"] =  $id;
             $data["tipo"] =  "Marcar como enviado";
             $data["fecha"] = date("Y-m-d H:i");
-            VentaUpdateEnviadoPusherJob::dispatch($data);
+            // VentaUpdateEnviadoPusherJob::dispatch($data);
+            try {
+                $options = array(
+                    'cluster' => env("PUSHER_APP_CLUSTER"),
+                    'encrypted' => true
+                );
+                $pusher = new Pusher(
+                    env('PUSHER_APP_KEY'),
+                    env('PUSHER_APP_SECRET'),
+                    env('PUSHER_APP_ID'),
+                    $options
+                );
+                $pusher->trigger('pedidos-pendientes', 'App\Events\EventoPedidos', $data);
+            } catch (\Exception $th) {
+                // throw $th;
+                \Log::error($th->getMessage());
+            }
+
             return response()->json(["status" => "success",  "message" => "Guardado!", "data" => $id]);
         }
  
@@ -1075,7 +1092,24 @@ class VentasController extends Controller
             $dataPuher["estado"] = "refrescar";
             $dataPuher["venta_id"] =  $venta_id;
             // generar evento de pedido
-            VentaUpdatePusherJob::dispatch($dataPuher); 
+            // VentaUpdatePusherJob::dispatch($dataPuher); 
+            try {
+                $options = array(
+                    'cluster' => env("PUSHER_APP_CLUSTER"),
+                    'encrypted' => true
+                );
+                $pusher = new Pusher(
+                    env('PUSHER_APP_KEY'),
+                    env('PUSHER_APP_SECRET'),
+                    env('PUSHER_APP_ID'),
+                    $options
+                );
+                $pusher->trigger('pedidos-pendientes', 'App\Events\EventoPedidos', $dataPuher);
+                //code...
+            } catch (\Exception $th) {
+                \Log::error($th->getMessage());
+            }
+
 
         }
 
@@ -1085,7 +1119,23 @@ class VentasController extends Controller
             $dataPuher["estado"] = "eliminar";
             $dataPuher["venta_id"] =  $venta_id;
             // generar evento de pedido
-            VentaUpdatePusherJob::dispatch($dataPuher); 
+            // VentaUpdatePusherJob::dispatch($dataPuher); 
+            try {
+                $options = array(
+                    'cluster' => env("PUSHER_APP_CLUSTER"),
+                    'encrypted' => true
+                );
+                $pusher = new Pusher(
+                    env('PUSHER_APP_KEY'),
+                    env('PUSHER_APP_SECRET'),
+                    env('PUSHER_APP_ID'),
+                    $options
+                );
+                $pusher->trigger('pedidos-pendientes', 'App\Events\EventoPedidos', $dataPuher);
+                //code...
+            } catch (\Exception $th) {
+                \Log::error($th->getMessage());
+            }
         }
         $suma = 0;
         if ($pagos_id && $pagos_monto) {
@@ -1108,7 +1158,11 @@ class VentasController extends Controller
         }
 
         // actualizar caja  
-        VentaUpdateCajaJob::dispatch($venta_id, $fecha); // true = incrementar
+        // VentaUpdateCajaJob::dispatch($venta_id, $fecha); // true = incrementar
+        $montoEfectivo = VentaDetallePago::select(\DB::raw("sum(monto) as monto"))->where("venta_id", $venta_id) ->where("eliminado",false)->whereIn("tipopago_id", [1,8] )->first();
+        if(  isset($montoEfectivo["monto"]) && $montoEfectivo["monto"] !==null ){
+            CajasDetalle::where("caja_abierta", true)->where(\DB::raw("to_char(inicio_fecha,'yyyy-mm-dd')") , $fecha)->increment("monto_estimado", $montoEfectivo["monto"]);
+        }
 
 
         if ($ticket == true) {
@@ -1367,7 +1421,9 @@ class VentasController extends Controller
             $detalle .= ",,,";
             $detalle = str_replace(",,,,,", "", $detalle);
 
-            VentaUpdateDetalleJob::dispatch($venta_id, $total, $detalle);
+            // VentaUpdateDetalleJob::dispatch($venta_id, $total, $detalle);
+            Ventas::where("id", $venta_id) ->where("eliminado", false)
+            ->update(["monto" => $total, "detalle" => $detalle]);
            
 
             if (isset($data["descuento_importe"]) && !empty($data["descuento_importe"])) {
@@ -1378,7 +1434,12 @@ class VentasController extends Controller
             // si caja abierta incrementar monto_estimado
             // $caja_abierta = CajasDetalle::where('caja_abierta', true)->increment("monto_estimado", $total);
             // reportes 
-            VentaReportesCantidadMontoJob::dispatch($fecha,$total);
+            // VentaReportesCantidadMontoJob::dispatch($fecha,$total);
+            $mes_fecha = date("m", strtotime($fecha));
+            $anio_fecha = date("Y", strtotime($fecha));
+            Reportes::firstOrCreate(["mes" => $mes_fecha, "anio" => $anio_fecha, "eliminado" => false]);
+            Reportes::where("mes", $mes_fecha)->where("anio",  $anio_fecha)->increment("monto_ventas", $total);
+            Reportes::where("mes", $mes_fecha)->where("anio",  $anio_fecha)->increment("cantidad_ventas", 1);
            
         }
 
@@ -1417,7 +1478,22 @@ class VentasController extends Controller
         if ($fecha == date("Y-m-d")) {
             if (date("H:i") >= $t1_hora_desde && date("H:i") <= $t1_hora_hasta ||  date("H:i") >= $t2_hora_desde && date("H:i") <= $t2_hora_hasta) {
                 if (in_array($data["tipoenvio_id"], array(1, 2))) {
-                    VentaStorePusherJob::dispatch($dataEvento);
+                    // VentaStorePusherJob::dispatch($dataEvento);
+                    try {
+                        $options = array(
+                            'cluster' => env("PUSHER_APP_CLUSTER"),
+                            'encrypted' => true
+                        );
+                        $pusher = new Pusher(
+                            env('PUSHER_APP_KEY'),
+                            env('PUSHER_APP_SECRET'),
+                            env('PUSHER_APP_ID'),
+                            $options
+                        );
+                        $pusher->trigger('pedidos-pendientes', 'App\Events\EventoPedidos', $dataEvento);
+                    } catch (\Exception $th) {
+                        Log::error($th);
+                    }
                 }
             }
         }
@@ -1494,7 +1570,64 @@ class VentasController extends Controller
 
         if ($venta) {
             // eliminar venta desde Jobs
-            VentaDestroyJob::dispatch($venta);
+            // VentaDestroyJob::dispatch($venta);
+
+            $t1_hora_desde = "07:30";
+            $t1_hora_hasta = "16:00";
+
+            $t2_hora_desde = "16:01";
+            $t2_hora_hasta = "23:59";
+
+            // decrementar caja 
+            // tipopago_id 1, 8 // efectivo y efectivo pedidos ya
+            $tipopago_id    = $venta["tipopago_id"];
+            $total_recibido = $venta["total_recibido"];
+            $fecha          = $venta["fecha"];
+            $venta_id       = $venta["id"];
+
+
+            $montoEfectivo = VentaDetallePago::select(\DB::raw("sum(monto) as monto"))->where("venta_id", $venta_id) ->where("eliminado",false)->whereIn("tipopago_id", [1,8] )->first();
+            if( isset($montoEfectivo["monto"]) && $montoEfectivo["monto"] !==null ){
+                CajasDetalle::where("caja_abierta", true)->where(\DB::raw("to_char(inicio_fecha,'yyyy-mm-dd')") , $fecha)->decrement("monto_estimado", $montoEfectivo["monto"]);
+            }
+           
+
+            $venta_detalle = VentaDetalleArticulo::select("cantidad", "articulo_id")->where("venta_id", $venta_id)->where("eliminado", false)->get();
+
+            if ($venta_detalle) {
+                foreach ($venta_detalle as $vd) {
+                    $cant_art = (int)$vd["cantidad"];
+                    Articulo::where("id", $vd["articulo_id"])->increment("stock", $vd["cantidad"]);
+                    // BEGIN ESTADISTICA: CANTIDAD ARTICULOS VENDIDOS POR TURNOS DEL DIA 
+                    $dia = date("d");
+                    $mes = date("m");
+                    $anio = date("Y");
+                    if (date("H:i") >= $t1_hora_desde && date("H:i") <= $t1_hora_hasta) {
+                        ArticuloPorDia::firstOrCreate(["articulo_id" => $vd["articulo_id"], "dia" => $dia, "mes" => $mes, "anio" => $anio, "t1" => true]);
+                        ArticuloPorDia::where("dia", $dia)->where("mes", $mes)->where("anio",  $anio)->where("t1", true)->where("articulo_id", $vd["articulo_id"])->where("cantidad", '>', 0)->decrement("cantidad", $cant_art);
+                    }
+
+                    if (date("H:i") >= $t2_hora_desde && date("H:i") <= $t2_hora_hasta) {
+                        ArticuloPorDia::firstOrCreate(["articulo_id" => $vd["articulo_id"], "dia" => $dia, "mes" => $mes, "anio" => $anio, "t2" => true]);
+                        ArticuloPorDia::where("dia", $dia)->where("mes", $mes)->where("anio",  $anio)->where("t2", true)->where("articulo_id", $vd["articulo_id"])->where("cantidad", ">", 0)->decrement("cantidad", $cant_art);
+                    }
+                    // END ESTADISTICA: CANTIDAD ARTICULOS VENDIDOS POR TURNOS DEL DIA 
+                }
+                VentaDetalleArticulo::where("venta_id", $venta_id)->update(["eliminado" => true]);
+            }
+            $mes_fecha = date("m", strtotime($venta['fecha']));
+            $anio_fecha = date("Y", strtotime($venta['fecha']));
+            $monto = $venta['monto'];
+
+            if ($monto !== null) {
+                Reportes::where("mes", $mes_fecha)->where("anio", $anio_fecha)->decrement("monto_ventas", $monto);
+                Reportes::where("mes", $mes_fecha)->where("anio", $anio_fecha)->decrement("cantidad_ventas", 1);
+            }
+
+            Ventas::where("id", $venta_id)->where("eliminado", false)->update(["eliminado" => true]);
+
+
+            
     
             // "tipoenvio_id" => 3, // enviado , si es 3 ya fue eliminado del mostrador ( para evitar hacer una peticion extra )
             if ($venta["fecha"] == date("Y-m-d") && $venta["tipoenvio_id"] !== 3 ) {
@@ -1503,7 +1636,23 @@ class VentasController extends Controller
                 $data["estado"] = "eliminar";
                 $data["venta_id"] =  $venta_id;
                 $data["created_at"] =  date("Y-m-d H:i", strtotime($venta['created_at']));
-                VentaDestroyPusherJob::dispatch($data);
+                // VentaDestroyPusherJob::dispatch($data);
+                try {
+                    // generar evento de pedido
+                    $options = array(
+                        'cluster' => env("PUSHER_APP_CLUSTER"),
+                        'encrypted' => true
+                    );
+                    $pusher = new Pusher(
+                        env('PUSHER_APP_KEY'),
+                        env('PUSHER_APP_SECRET'),
+                        env('PUSHER_APP_ID'),
+                        $options
+                    );
+                    $pusher->trigger('pedidos-pendientes', 'App\Events\EventoPedidos', $data);
+                } catch (\Exception $th) {
+                    \Log::error($th);
+                }
             }
 
             return response()->json(["status" => "success", "message" => "Eliminado"]);
