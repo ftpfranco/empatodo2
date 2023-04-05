@@ -39,8 +39,7 @@ class DatabaseSeeder extends Seeder
      */
  
     public function run(){
-        App\User::where("es_empleado",false)->where("email","administrador@gmail.com")->update([
-            'email' => "administrador@empatodo.com",
+        App\User::where("es_empleado",false)->where("email","administrador@empatodo.com")->update([
             'password' => bcrypt("@17Empatodo"), // password
         ]);
     }
