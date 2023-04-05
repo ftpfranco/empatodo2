@@ -18,8 +18,8 @@ if [ $# -gt 0 ]; then
 
 else
     # exec /usr/bin/supervisord -c /etc/supervisor/supervisord.conf
-    # exec /usr/bin/supervisord -c /etc/supervisor/supervisord.conf & disown
-    exec /init 
+    exec /usr/bin/supervisord -c /etc/supervisor/supervisord.conf  
+    # exec /init 
 fi
 
 # nohup /usr/bin/php /var/www/html/artisan queue:work  --sleep=3 --tries=3 --timeout=3600   </dev/null &>/dev/null &
